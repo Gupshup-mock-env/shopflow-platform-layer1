@@ -22,7 +22,7 @@ from confluent_kafka import KafkaException, Message, Producer
 
 from models import OrderCreatedEvent, OrderItem
 
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "order-kafka-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "order-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
 HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
 
