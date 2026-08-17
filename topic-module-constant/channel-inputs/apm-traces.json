@@ -1,0 +1,174 @@
+{
+  "traces": [
+    {
+      "trace_id": "b41f7c2098ad3e65",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "cart-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899200000000000,
+          "duration_ns": 3870000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-001"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "pricing-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899200029000000,
+          "duration_ns": 10420000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.message_id": "msg-001",
+            "messaging.consumer_group": "pricing-service"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "0d69ea3517cb84f2",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "cart-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899202004000000,
+          "duration_ns": 4520000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-002"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "pricing-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899202045000000,
+          "duration_ns": 13760000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.message_id": "msg-002",
+            "messaging.consumer_group": "pricing-service"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "7ca2d8501f4b39e7",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "cart-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899204008000000,
+          "duration_ns": 3310000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-003"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "pricing-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899204026000000,
+          "duration_ns": 9180000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.message_id": "msg-003",
+            "messaging.consumer_group": "pricing-service"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "39e0b7cd6415a82f",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "cart-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899206012000000,
+          "duration_ns": 5140000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-004"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "pricing-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899206059000000,
+          "duration_ns": 16240000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.message_id": "msg-004",
+            "messaging.consumer_group": "pricing-service"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "f58214ce7ab903d6",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "cart-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899208016000000,
+          "duration_ns": 4090000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-005"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "pricing-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.cart.updated",
+          "start_ns": 1730899208049000000,
+          "duration_ns": 11530000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.cart.updated",
+            "messaging.message_id": "msg-005",
+            "messaging.consumer_group": "pricing-service"
+          }
+        }
+      ]
+    }
+  ]
+}

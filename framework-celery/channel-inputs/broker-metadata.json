@@ -1,0 +1,26 @@
+{
+  "broker": "rabbitmq",
+  "exchanges": [
+    {"name": "", "type": "direct", "durable": true},
+    {"name": "payments", "type": "direct", "durable": true},
+    {"name": "celery.pidbox", "type": "fanout", "durable": false}
+  ],
+  "queues": [
+    {"name": "payments", "durable": true, "consumers": 1},
+    {"name": "payment-worker@payment-worker-6c8d5f79b4-2xk4t.celery.pidbox", "durable": false, "consumers": 1}
+  ],
+  "bindings": [
+    {
+      "source": "payments",
+      "destination": "payments",
+      "destination_type": "queue",
+      "routing_key": "payments"
+    },
+    {
+      "source": "celery.pidbox",
+      "destination": "payment-worker@payment-worker-6c8d5f79b4-2xk4t.celery.pidbox",
+      "destination_type": "queue",
+      "routing_key": ""
+    }
+  ]
+}

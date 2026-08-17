@@ -1,0 +1,47 @@
+case_id: "framework-faststream"
+layer: 1
+axis: "framework"
+variant: "faststream-kafka-broker"
+description: "FastStream KafkaBroker: the producer both decorates a function with @broker.publisher and calls broker.publish directly; the consumer declares @broker.subscriber with a Pydantic model in the handler signature."
+
+services:
+  - name: "pricing-service"
+    role: "producer"
+  - name: "discount-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.pricing.updated"
+    broker: "kafka"
+
+edges:
+  - producer: "pricing-service"
+    topic: "shopflow.pricing.updated"
+    consumer: "discount-service"
+
+payloads:
+  - producer: "pricing-service"
+    topic: "shopflow.pricing.updated"
+    schema_type: "pydantic"
+    schema:
+      model_name: "PriceUpdatedEvent"
+      fields:
+        product_id: "str"
+        old_price_cents: "int"
+        new_price_cents: "int"
+        effective_at: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["pricing-service", "shopflow.pricing.updated", "discount-service"]
+      static: "full"
+      apm: "full"
+      broker: "full"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

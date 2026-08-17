@@ -1,0 +1,47 @@
+case_id: "topic-dotenv"
+layer: 1
+axis: "topic-indirection"
+variant: "dotenv"
+description: "Topic name resolved from a .env file in the repository root loaded with python-dotenv."
+
+services:
+  - name: "returns-service"
+    role: "producer"
+  - name: "refund-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.returns.initiated"
+    broker: "kafka"
+
+edges:
+  - producer: "returns-service"
+    topic: "shopflow.returns.initiated"
+    consumer: "refund-service"
+
+payloads:
+  - producer: "returns-service"
+    topic: "shopflow.returns.initiated"
+    schema_type: "pydantic"
+    schema:
+      model_name: "ReturnInitiatedEvent"
+      fields:
+        return_id: "str"
+        order_id: "str"
+        reason: "str"
+        items: "list[str]"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["returns-service", "shopflow.returns.initiated", "refund-service"]
+      static: "full"
+      apm: "full"
+      broker: "full"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

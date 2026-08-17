@@ -1,0 +1,78 @@
+{
+  "broker": "rabbitmq",
+  "exchanges": [
+    {"name": "", "type": "direct", "durable": true},
+    {"name": "invoicing", "type": "direct", "durable": true},
+    {"name": "celery.pidbox", "type": "fanout", "durable": false},
+    {"name": "reply.celery.pidbox", "type": "direct", "durable": false}
+  ],
+  "queues": [
+    {
+      "name": "invoicing",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "consumers": 1,
+      "messages": 0,
+      "messages_acknowledged": 5,
+      "consumer_details": [
+        {
+          "consumer_tag": "None1",
+          "ack_required": true,
+          "prefetch_count": 1,
+          "channel_details": {
+            "number": 1,
+            "peer_host": "10.42.3.18",
+            "connection_name": "invoice-worker"
+          }
+        }
+      ]
+    },
+    {
+      "name": "invoice-worker@invoice-worker-7d9f4c8b5-x2qlm.celery.pidbox",
+      "vhost": "/",
+      "durable": false,
+      "auto_delete": true,
+      "consumers": 1,
+      "messages": 0
+    }
+  ],
+  "bindings": [
+    {
+      "source": "invoicing",
+      "destination": "invoicing",
+      "destination_type": "queue",
+      "routing_key": "invoicing"
+    },
+    {
+      "source": "celery.pidbox",
+      "destination": "invoice-worker@invoice-worker-7d9f4c8b5-x2qlm.celery.pidbox",
+      "destination_type": "queue",
+      "routing_key": ""
+    }
+  ],
+  "connections": [
+    {
+      "name": "10.42.2.9:38412 -> 10.42.0.7:5672",
+      "vhost": "/",
+      "user": "guest",
+      "client_properties": {
+        "product": "py-amqp",
+        "product_version": "5.2.0",
+        "platform": "Python 3.11.9",
+        "connection_name": "billing-service"
+      }
+    },
+    {
+      "name": "10.42.3.18:51166 -> 10.42.0.7:5672",
+      "vhost": "/",
+      "user": "guest",
+      "client_properties": {
+        "product": "py-amqp",
+        "product_version": "5.2.0",
+        "platform": "Python 3.11.9",
+        "connection_name": "invoice-worker"
+      }
+    }
+  ]
+}

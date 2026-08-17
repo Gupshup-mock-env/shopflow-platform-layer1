@@ -1,0 +1,194 @@
+{
+  "traces": [
+    {
+      "trace_id": "6b19f0c73da5e284",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "billing-service",
+          "operation": "celery.apply_async",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000000000000000,
+          "duration_ns": 5240000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "invoicing",
+            "messaging.message_id": "0f1c2a54-6d3b-4a91-9c07-1e5b8a2d4401",
+            "celery.task_name": "billing.tasks.generate_invoice"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "invoice-worker",
+          "operation": "celery.run",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000000042700000,
+          "duration_ns": 21850000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.consumer_group": "invoice-worker",
+            "messaging.message_id": "0f1c2a54-6d3b-4a91-9c07-1e5b8a2d4401",
+            "celery.task_name": "billing.tasks.generate_invoice",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "af52d80613c9e7b4",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "billing-service",
+          "operation": "celery.apply_async",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000002013100000,
+          "duration_ns": 4615000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "invoicing",
+            "messaging.message_id": "5a83b4d1-90ce-4f22-8b6a-c7e0d3f19a72",
+            "celery.task_name": "billing.tasks.generate_invoice"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "invoice-worker",
+          "operation": "celery.run",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000002051900000,
+          "duration_ns": 18430000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.consumer_group": "invoice-worker",
+            "messaging.message_id": "5a83b4d1-90ce-4f22-8b6a-c7e0d3f19a72",
+            "celery.task_name": "billing.tasks.generate_invoice",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "c7e438b95f201da6",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "billing-service",
+          "operation": "celery.apply_async",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000004021700000,
+          "duration_ns": 6080000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "invoicing",
+            "messaging.message_id": "b2470ce8-1d55-4c03-a9f1-30e7b6482c9d",
+            "celery.task_name": "billing.tasks.generate_invoice"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "invoice-worker",
+          "operation": "celery.run",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000004069400000,
+          "duration_ns": 25610000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.consumer_group": "invoice-worker",
+            "messaging.message_id": "b2470ce8-1d55-4c03-a9f1-30e7b6482c9d",
+            "celery.task_name": "billing.tasks.generate_invoice",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "1d6a95ef4820b73c",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "billing-service",
+          "operation": "celery.apply_async",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000006016400000,
+          "duration_ns": 4870000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "invoicing",
+            "messaging.message_id": "7c9d0e21-4ab6-48f7-b1d3-56a802fe37b8",
+            "celery.task_name": "billing.tasks.generate_invoice"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "invoice-worker",
+          "operation": "celery.run",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000006048200000,
+          "duration_ns": 19940000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.consumer_group": "invoice-worker",
+            "messaging.message_id": "7c9d0e21-4ab6-48f7-b1d3-56a802fe37b8",
+            "celery.task_name": "billing.tasks.generate_invoice",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "934bc17e05df6a28",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "billing-service",
+          "operation": "celery.apply_async",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000008027900000,
+          "duration_ns": 5395000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "invoicing",
+            "messaging.message_id": "e40a6bf3-72d8-4e15-83c9-9b21df04c65a",
+            "celery.task_name": "billing.tasks.generate_invoice"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "invoice-worker",
+          "operation": "celery.run",
+          "resource": "billing.tasks.generate_invoice",
+          "start_ns": 1700000008076300000,
+          "duration_ns": 23170000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "invoicing",
+            "messaging.consumer_group": "invoice-worker",
+            "messaging.message_id": "e40a6bf3-72d8-4e15-83c9-9b21df04c65a",
+            "celery.task_name": "billing.tasks.generate_invoice",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    }
+  ]
+}

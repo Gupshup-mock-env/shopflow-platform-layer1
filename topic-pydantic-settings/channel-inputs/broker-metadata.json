@@ -1,0 +1,25 @@
+{
+  "broker": "kafka",
+  "topics": [
+    {
+      "name": "shopflow.loyalty.points_earned",
+      "partitions": 3,
+      "replication_factor": 1
+    }
+  ],
+  "consumer_groups": [
+    {
+      "group_id": "rewards-service",
+      "members": [
+        {
+          "client_id": "rewards-service-0",
+          "topic_partitions": [
+            {"topic": "shopflow.loyalty.points_earned", "partition": 0},
+            {"topic": "shopflow.loyalty.points_earned", "partition": 1},
+            {"topic": "shopflow.loyalty.points_earned", "partition": 2}
+          ]
+        }
+      ]
+    }
+  ]
+}

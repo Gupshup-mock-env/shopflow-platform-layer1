@@ -1,0 +1,47 @@
+case_id: "framework-dramatiq"
+layer: 1
+axis: "framework"
+variant: "dramatiq-actor-queue"
+description: "Dramatiq over RabbitMQ: the edge is an actor call whose queue is declared by the @dramatiq.actor queue_name kwarg."
+
+services:
+  - name: "alert-service"
+    role: "producer"
+  - name: "alert-worker"
+    role: "consumer"
+
+topics:
+  - name: "alerts"
+    broker: "rabbitmq"
+
+edges:
+  - producer: "alert-service"
+    topic: "alerts"
+    consumer: "alert-worker"
+    routing_key: "alerts"
+    binding_pattern: "alerts"
+
+payloads:
+  - producer: "alert-service"
+    topic: "alerts"
+    schema_type: "task-kwargs"
+    schema:
+      model_name: "send_alert"
+      fields:
+        alert_type: "str"
+        sku: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["alert-service", "alerts", "alert-worker"]
+      static: "full"
+      apm: "full"
+      broker: "full"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

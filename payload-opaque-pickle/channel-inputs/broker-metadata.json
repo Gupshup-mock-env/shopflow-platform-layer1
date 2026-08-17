@@ -1,0 +1,25 @@
+{
+  "broker": "kafka",
+  "topics": [
+    {
+      "name": "shopflow.legacy.order_sync",
+      "partitions": 3,
+      "replication_factor": 1
+    }
+  ],
+  "consumer_groups": [
+    {
+      "group_id": "processor-service",
+      "members": [
+        {
+          "client_id": "processor-service-0",
+          "topic_partitions": [
+            {"topic": "shopflow.legacy.order_sync", "partition": 0},
+            {"topic": "shopflow.legacy.order_sync", "partition": 1},
+            {"topic": "shopflow.legacy.order_sync", "partition": 2}
+          ]
+        }
+      ]
+    }
+  ]
+}

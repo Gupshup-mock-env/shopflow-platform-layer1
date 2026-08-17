@@ -1,0 +1,194 @@
+{
+  "traces": [
+    {
+      "trace_id": "4a1c07de93b6f215",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "order-service",
+          "operation": "celery.apply_async",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000000000000000,
+          "duration_ns": 5310000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "payments",
+            "messaging.message_id": "b3f1d0c2-59a4-4f7c-9a10-2d6e8c114f01",
+            "celery.task_name": "orders.tasks.process_payment"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "payment-worker",
+          "operation": "celery.run",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000000031400000,
+          "duration_ns": 18740000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.consumer_group": "payment-worker",
+            "messaging.message_id": "b3f1d0c2-59a4-4f7c-9a10-2d6e8c114f01",
+            "celery.task_name": "orders.tasks.process_payment",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "e8720b5fa14d6c93",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "order-service",
+          "operation": "celery.apply_async",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000002014900000,
+          "duration_ns": 4180000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "payments",
+            "messaging.message_id": "7c40a8e6-1b2d-4a55-8e93-40f5c7a2b118",
+            "celery.task_name": "orders.tasks.process_payment"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "payment-worker",
+          "operation": "celery.run",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000002038600000,
+          "duration_ns": 15320000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.consumer_group": "payment-worker",
+            "messaging.message_id": "7c40a8e6-1b2d-4a55-8e93-40f5c7a2b118",
+            "celery.task_name": "orders.tasks.process_payment",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "1d5e93c4870ba62f",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "order-service",
+          "operation": "celery.apply_async",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000004022100000,
+          "duration_ns": 3960000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "payments",
+            "messaging.message_id": "0a9b6f31-cc74-4d18-9f02-6b1e5d840c27",
+            "celery.task_name": "orders.tasks.process_payment"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "payment-worker",
+          "operation": "celery.run",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000004069800000,
+          "duration_ns": 22410000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.consumer_group": "payment-worker",
+            "messaging.message_id": "0a9b6f31-cc74-4d18-9f02-6b1e5d840c27",
+            "celery.task_name": "orders.tasks.process_payment",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "96b3fa02e7d51c84",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "order-service",
+          "operation": "celery.apply_async",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000006017500000,
+          "duration_ns": 4725000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "payments",
+            "messaging.message_id": "d21f7b58-8e63-4c90-a4b7-91cf0e35a6d3",
+            "celery.task_name": "orders.tasks.process_payment"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "payment-worker",
+          "operation": "celery.run",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000006044300000,
+          "duration_ns": 16880000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.consumer_group": "payment-worker",
+            "messaging.message_id": "d21f7b58-8e63-4c90-a4b7-91cf0e35a6d3",
+            "celery.task_name": "orders.tasks.process_payment",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "5f0ac847162be3d9",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "order-service",
+          "operation": "celery.apply_async",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000008029300000,
+          "duration_ns": 5040000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.destination_kind": "queue",
+            "messaging.rabbitmq.routing_key": "payments",
+            "messaging.message_id": "38e5c19a-4072-4bd6-b8f1-7ca03d2e9581",
+            "celery.task_name": "orders.tasks.process_payment"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "payment-worker",
+          "operation": "celery.run",
+          "resource": "orders.tasks.process_payment",
+          "start_ns": 1700000008076900000,
+          "duration_ns": 19630000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "payments",
+            "messaging.consumer_group": "payment-worker",
+            "messaging.message_id": "38e5c19a-4072-4bd6-b8f1-7ca03d2e9581",
+            "celery.task_name": "orders.tasks.process_payment",
+            "celery.state": "SUCCESS"
+          }
+        }
+      ]
+    }
+  ]
+}

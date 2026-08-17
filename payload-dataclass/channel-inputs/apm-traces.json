@@ -1,0 +1,156 @@
+{
+  "traces": [
+    {
+      "trace_id": "a17f3c9e50d2b846",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "inventory-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988107000000000,
+          "duration_ns": 3910000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "SKU-CERAMIC-MUG-01",
+            "messaging.kafka.partition": "1",
+            "messaging.protocol": "json",
+            "payload_sample": "{\"sku\": \"SKU-CERAMIC-MUG-01\", \"warehouse_id\": \"WH-ATL-01\", \"quantity_delta\": -4, \"reason\": \"order_allocated\"}"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "warehouse-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988107019800000,
+          "duration_ns": 8260000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.consumer_group": "warehouse-service",
+            "messaging.message_id": "SKU-CERAMIC-MUG-01",
+            "messaging.kafka.partition": "1"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "6d2b84f0a913ce57",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "inventory-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988109011700000,
+          "duration_ns": 5260000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "SKU-POUR-OVER-03",
+            "messaging.kafka.partition": "0",
+            "messaging.protocol": "json",
+            "payload_sample": "{\"sku\": \"SKU-POUR-OVER-03\", \"warehouse_id\": \"WH-DFW-02\", \"quantity_delta\": 120, \"reason\": \"purchase_order_received\"}"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "warehouse-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988109053850000,
+          "duration_ns": 13470000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.consumer_group": "warehouse-service",
+            "messaging.message_id": "SKU-POUR-OVER-03",
+            "messaging.kafka.partition": "0"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "c9e13a75802f4db6",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "inventory-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988111023400000,
+          "duration_ns": 4105000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "SKU-BEANS-ETH-12",
+            "messaging.kafka.partition": "2",
+            "messaging.protocol": "json",
+            "payload_sample": "{\"sku\": \"SKU-BEANS-ETH-12\", \"warehouse_id\": \"WH-ATL-01\", \"quantity_delta\": -18, \"reason\": \"order_allocated\"}"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "warehouse-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988111050300000,
+          "duration_ns": 9015000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.consumer_group": "warehouse-service",
+            "messaging.message_id": "SKU-BEANS-ETH-12",
+            "messaging.kafka.partition": "2"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "38af6b0d1e54c729",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "inventory-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988113038800000,
+          "duration_ns": 3720000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "SKU-GRINDER-07",
+            "messaging.kafka.partition": "1",
+            "messaging.protocol": "json",
+            "payload_sample": "{\"sku\": \"SKU-GRINDER-07\", \"warehouse_id\": \"WH-SEA-03\", \"quantity_delta\": 2, \"reason\": \"customer_return\"}"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "warehouse-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.inventory.stock_updated",
+          "start_ns": 1730988113054440000,
+          "duration_ns": 11880000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.inventory.stock_updated",
+            "messaging.consumer_group": "warehouse-service",
+            "messaging.message_id": "SKU-GRINDER-07",
+            "messaging.kafka.partition": "1"
+          }
+        }
+      ]
+    }
+  ]
+}

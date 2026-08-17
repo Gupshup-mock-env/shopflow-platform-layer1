@@ -1,0 +1,25 @@
+{
+  "broker": "kafka",
+  "topics": [
+    {
+      "name": "shopflow.inventory.stock_updated",
+      "partitions": 3,
+      "replication_factor": 1
+    }
+  ],
+  "consumer_groups": [
+    {
+      "group_id": "warehouse-service",
+      "members": [
+        {
+          "client_id": "warehouse-service-0",
+          "topic_partitions": [
+            {"topic": "shopflow.inventory.stock_updated", "partition": 0},
+            {"topic": "shopflow.inventory.stock_updated", "partition": 1},
+            {"topic": "shopflow.inventory.stock_updated", "partition": 2}
+          ]
+        }
+      ]
+    }
+  ]
+}

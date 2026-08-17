@@ -1,0 +1,47 @@
+case_id: "topic-module-constant"
+layer: 1
+axis: "topic-indirection"
+variant: "level-2-module-constant"
+description: "Topic name lives in a shared module constant that both services import."
+
+services:
+  - name: "cart-service"
+    role: "producer"
+  - name: "pricing-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.cart.updated"
+    broker: "kafka"
+
+edges:
+  - producer: "cart-service"
+    topic: "shopflow.cart.updated"
+    consumer: "pricing-service"
+
+payloads:
+  - producer: "cart-service"
+    topic: "shopflow.cart.updated"
+    schema_type: "pydantic"
+    schema:
+      model_name: "CartUpdatedEvent"
+      fields:
+        cart_id: "str"
+        customer_id: "str"
+        item_count: "int"
+        total_cents: "int"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["cart-service", "shopflow.cart.updated", "pricing-service"]
+      static: "full"
+      apm: "full"
+      broker: "full"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

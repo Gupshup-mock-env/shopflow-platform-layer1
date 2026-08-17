@@ -1,0 +1,47 @@
+case_id: "topic-class-attribute"
+layer: 1
+axis: "topic-indirection"
+variant: "level-3-class-attribute"
+description: "Topic name is assigned to an instance attribute in __init__ and used via self.topic at the call site."
+
+services:
+  - name: "user-service"
+    role: "producer"
+  - name: "profile-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.users.registered"
+    broker: "kafka"
+
+edges:
+  - producer: "user-service"
+    topic: "shopflow.users.registered"
+    consumer: "profile-service"
+
+payloads:
+  - producer: "user-service"
+    topic: "shopflow.users.registered"
+    schema_type: "pydantic"
+    schema:
+      model_name: "UserRegisteredEvent"
+      fields:
+        user_id: "str"
+        email: "str"
+        name: "str"
+        registered_at: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["user-service", "shopflow.users.registered", "profile-service"]
+      static: "full"
+      apm: "full"
+      broker: "full"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

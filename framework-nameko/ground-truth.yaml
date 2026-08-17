@@ -1,0 +1,46 @@
+case_id: "framework-nameko"
+layer: 1
+axis: "framework"
+variant: "nameko-event-dispatcher"
+description: "Nameko EventDispatcher and @event_handler over RabbitMQ: the addressing unit is source-service plus event type."
+
+services:
+  - name: "registration-service"
+    role: "producer"
+  - name: "welcome-service"
+    role: "consumer"
+
+topics:
+  - name: "registration-service.user_registered"
+    broker: "rabbitmq"
+
+edges:
+  - producer: "registration-service"
+    topic: "registration-service.user_registered"
+    consumer: "welcome-service"
+    routing_key: "user_registered"
+    binding_pattern: "user_registered"
+
+payloads:
+  - producer: "registration-service"
+    topic: "registration-service.user_registered"
+    schema_type: "dict-literal"
+    schema:
+      fields:
+        user_id: "str"
+        email: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["registration-service", "registration-service.user_registered", "welcome-service"]
+      static: "full"
+      apm: "full"
+      broker: "full"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

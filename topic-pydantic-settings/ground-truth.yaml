@@ -1,0 +1,47 @@
+case_id: "topic-pydantic-settings"
+layer: 1
+axis: "topic-indirection"
+variant: "pydantic-settings"
+description: "Topic name resolved from a pydantic-settings BaseSettings field default with no environment override at deploy time."
+
+services:
+  - name: "loyalty-service"
+    role: "producer"
+  - name: "rewards-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.loyalty.points_earned"
+    broker: "kafka"
+
+edges:
+  - producer: "loyalty-service"
+    topic: "shopflow.loyalty.points_earned"
+    consumer: "rewards-service"
+
+payloads:
+  - producer: "loyalty-service"
+    topic: "shopflow.loyalty.points_earned"
+    schema_type: "pydantic"
+    schema:
+      model_name: "PointsEarnedEvent"
+      fields:
+        customer_id: "str"
+        order_id: "str"
+        points: "int"
+        reason: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["loyalty-service", "shopflow.loyalty.points_earned", "rewards-service"]
+      static: "full"
+      apm: "full"
+      broker: "full"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

@@ -1,0 +1,219 @@
+{
+  "traces": [
+    {
+      "trace_id": "3f81c0a94d7b2e56",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "event-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.events",
+          "start_ns": 1700000000000000000,
+          "duration_ns": 3180000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.message_id": "msg-4f2a91c07b3d"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "audit-service",
+          "operation": "amqp.consume",
+          "resource": "audit-service.events",
+          "start_ns": 1700000000021400000,
+          "duration_ns": 8740000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "audit-service.events",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.consumer_group": "audit-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-4f2a91c07b3d"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "a2c749e0b18f35dd",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "event-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.events",
+          "start_ns": 1700000002007300000,
+          "duration_ns": 2744000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.message_id": "msg-8c1d64ae02f7"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "audit-service",
+          "operation": "amqp.consume",
+          "resource": "audit-service.events",
+          "start_ns": 1700000002026250000,
+          "duration_ns": 7206000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "audit-service.events",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.consumer_group": "audit-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-8c1d64ae02f7"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "6d0b45f2c93a71e8",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "event-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.events",
+          "start_ns": 1700000004015900000,
+          "duration_ns": 3902000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.message_id": "msg-b30e57f19a4c"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "audit-service",
+          "operation": "amqp.consume",
+          "resource": "audit-service.events",
+          "start_ns": 1700000004049600000,
+          "duration_ns": 11480000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "audit-service.events",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.consumer_group": "audit-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-b30e57f19a4c"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "b91e27d6403cf85a",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "event-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.events",
+          "start_ns": 1700000006022100000,
+          "duration_ns": 2461000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.message_id": "msg-27ad9c4e6018"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "audit-service",
+          "operation": "amqp.consume",
+          "resource": "audit-service.events",
+          "start_ns": 1700000006049220000,
+          "duration_ns": 9015000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "audit-service.events",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.consumer_group": "audit-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-27ad9c4e6018"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "17ca8be5f206d439",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "event-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.events",
+          "start_ns": 1700000008031600000,
+          "duration_ns": 3357000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.message_id": "msg-e6512bd7c39f"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "audit-service",
+          "operation": "amqp.consume",
+          "resource": "audit-service.events",
+          "start_ns": 1700000008076460000,
+          "duration_ns": 12930000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "shopflow.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "audit-service.events",
+            "messaging.rabbitmq.routing_key": "event.order.created",
+            "messaging.consumer_group": "audit-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-e6512bd7c39f"
+          }
+        }
+      ]
+    }
+  ]
+}

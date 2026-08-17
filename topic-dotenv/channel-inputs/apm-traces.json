@@ -1,0 +1,156 @@
+{
+  "traces": [
+    {
+      "trace_id": "f28c1b70d9a34e65",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "returns-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046120000000000,
+          "duration_ns": 4450000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 2,
+            "messaging.kafka.message_key": "RET-100341",
+            "messaging.message_id": "ret-71c9a4e0d3b8"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "refund-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046120022000000,
+          "duration_ns": 16700000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 2,
+            "messaging.consumer_group": "refund-service",
+            "messaging.message_id": "ret-71c9a4e0d3b8"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "91ad3f6c82e04b17",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "returns-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046122009000000,
+          "duration_ns": 3020000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 0,
+            "messaging.kafka.message_key": "RET-100342",
+            "messaging.message_id": "ret-2f60b891ca47"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "refund-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046122048000000,
+          "duration_ns": 11250000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 0,
+            "messaging.consumer_group": "refund-service",
+            "messaging.message_id": "ret-2f60b891ca47"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "6c05e738b1fa294d",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "returns-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046124018000000,
+          "duration_ns": 5180000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 1,
+            "messaging.kafka.message_key": "RET-100343",
+            "messaging.message_id": "ret-c50e3a726df1"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "refund-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046124063000000,
+          "duration_ns": 19400000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 1,
+            "messaging.consumer_group": "refund-service",
+            "messaging.message_id": "ret-c50e3a726df1"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "bd473a1e5f9c8062",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "returns-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046126033000000,
+          "duration_ns": 3760000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 2,
+            "messaging.kafka.message_key": "RET-100344",
+            "messaging.message_id": "ret-8b41f7ce0925"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "refund-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.returns.initiated",
+          "start_ns": 1763046126051000000,
+          "duration_ns": 12050000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.returns.initiated",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 2,
+            "messaging.consumer_group": "refund-service",
+            "messaging.message_id": "ret-8b41f7ce0925"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "broker": "kafka",
+  "topics": [
+    {
+      "name": "shopflow.returns.initiated",
+      "partitions": 3,
+      "replication_factor": 1
+    }
+  ],
+  "consumer_groups": [
+    {
+      "group_id": "refund-service",
+      "members": [
+        {
+          "client_id": "refund-service-0",
+          "topic_partitions": [
+            {"topic": "shopflow.returns.initiated", "partition": 0},
+            {"topic": "shopflow.returns.initiated", "partition": 1},
+            {"topic": "shopflow.returns.initiated", "partition": 2}
+          ]
+        }
+      ]
+    }
+  ]
+}

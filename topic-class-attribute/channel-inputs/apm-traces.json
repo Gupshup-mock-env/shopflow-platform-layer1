@@ -1,0 +1,140 @@
+{
+  "traces": [
+    {
+      "trace_id": "2ae91d64b0378fc5",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "user-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985600000000000,
+          "duration_ns": 4620000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-001"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "profile-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985600022000000,
+          "duration_ns": 14310000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.message_id": "msg-001",
+            "messaging.consumer_group": "profile-service"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "8c05f3ba17e26d40",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "user-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985602007000000,
+          "duration_ns": 3480000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-002"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "profile-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985602045000000,
+          "duration_ns": 9740000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.message_id": "msg-002",
+            "messaging.consumer_group": "profile-service"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "51b7de0c9a43638f",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "user-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985604014000000,
+          "duration_ns": 5270000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-003"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "profile-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985604059000000,
+          "duration_ns": 17820000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.message_id": "msg-003",
+            "messaging.consumer_group": "profile-service"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "d6304fa815cb972e",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "user-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985606021000000,
+          "duration_ns": 3990000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.destination_kind": "topic",
+            "messaging.message_id": "msg-004"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "profile-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.users.registered",
+          "start_ns": 1730985606048000000,
+          "duration_ns": 12060000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.users.registered",
+            "messaging.message_id": "msg-004",
+            "messaging.consumer_group": "profile-service"
+          }
+        }
+      ]
+    }
+  ]
+}

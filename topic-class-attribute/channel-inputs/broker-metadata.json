@@ -1,0 +1,25 @@
+{
+  "broker": "kafka",
+  "topics": [
+    {
+      "name": "shopflow.users.registered",
+      "partitions": 3,
+      "replication_factor": 1
+    }
+  ],
+  "consumer_groups": [
+    {
+      "group_id": "profile-service",
+      "members": [
+        {
+          "client_id": "profile-service-0",
+          "topic_partitions": [
+            { "topic": "shopflow.users.registered", "partition": 0 },
+            { "topic": "shopflow.users.registered", "partition": 1 },
+            { "topic": "shopflow.users.registered", "partition": 2 }
+          ]
+        }
+      ]
+    }
+  ]
+}

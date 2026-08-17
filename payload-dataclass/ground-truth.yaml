@@ -1,0 +1,49 @@
+case_id: "payload-dataclass"
+layer: 1
+axis: "payload"
+variant: "stdlib-dataclass-asdict"
+description: "Kafka producer/consumer on a literal topic where the payload is a stdlib dataclass serialised with dataclasses.asdict()."
+
+services:
+  - name: "inventory-service"
+    role: "producer"
+  - name: "warehouse-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.inventory.stock_updated"
+    broker: "kafka"
+
+edges:
+  - producer: "inventory-service"
+    topic: "shopflow.inventory.stock_updated"
+    consumer: "warehouse-service"
+
+payloads:
+  - producer: "inventory-service"
+    topic: "shopflow.inventory.stock_updated"
+    schema_type: "dataclass"
+    schema_file: "shared/models.py"
+    encoding: "json"
+    schema:
+      model_name: "StockUpdate"
+      fields:
+        sku: "str"
+        warehouse_id: "str"
+        quantity_delta: "int"
+        reason: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["inventory-service", "shopflow.inventory.stock_updated", "warehouse-service"]
+      static: "full"
+      apm: "partial"
+      broker: "blind"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

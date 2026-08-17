@@ -1,0 +1,244 @@
+{
+  "traces": [
+    {
+      "trace_id": "d4f2a71b95c03e68",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "registration-service",
+          "operation": "amqp.publish",
+          "resource": "registration-service.events",
+          "start_ns": 1700000000000000000,
+          "duration_ns": 4620000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.message_id": "msg-1a9f4c72e08b",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "welcome-service",
+          "operation": "amqp.consume",
+          "resource": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+          "start_ns": 1700000000017800000,
+          "duration_ns": 26310000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.consumer_group": "welcome-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-1a9f4c72e08b",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered",
+            "nameko.entrypoint": "welcome-service.send_welcome_email"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "0b76e3c812df9a45",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "registration-service",
+          "operation": "amqp.publish",
+          "resource": "registration-service.events",
+          "start_ns": 1700000002004800000,
+          "duration_ns": 3985000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.message_id": "msg-73de5b019c6a",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "welcome-service",
+          "operation": "amqp.consume",
+          "resource": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+          "start_ns": 1700000002029160000,
+          "duration_ns": 19480000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.consumer_group": "welcome-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-73de5b019c6a",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered",
+            "nameko.entrypoint": "welcome-service.send_welcome_email"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "9e51ad2740b6c8f3",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "registration-service",
+          "operation": "amqp.publish",
+          "resource": "registration-service.events",
+          "start_ns": 1700000004011500000,
+          "duration_ns": 5140000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.message_id": "msg-c08b3d5719ef",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "welcome-service",
+          "operation": "amqp.consume",
+          "resource": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+          "start_ns": 1700000004042550000,
+          "duration_ns": 34920000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.consumer_group": "welcome-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-c08b3d5719ef",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered",
+            "nameko.entrypoint": "welcome-service.send_welcome_email"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "5c8340fe6a1729bd",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "registration-service",
+          "operation": "amqp.publish",
+          "resource": "registration-service.events",
+          "start_ns": 1700000006018200000,
+          "duration_ns": 3712000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.message_id": "msg-45f2e8a6d031",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "welcome-service",
+          "operation": "amqp.consume",
+          "resource": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+          "start_ns": 1700000006064970000,
+          "duration_ns": 22075000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.consumer_group": "welcome-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-45f2e8a6d031",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered",
+            "nameko.entrypoint": "welcome-service.send_welcome_email"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "e2079b4c8d5316fa",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "registration-service",
+          "operation": "amqp.publish",
+          "resource": "registration-service.events",
+          "start_ns": 1700000008026900000,
+          "duration_ns": 4408000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.message_id": "msg-9b6c17f4a25e",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "welcome-service",
+          "operation": "amqp.consume",
+          "resource": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+          "start_ns": 1700000008049040000,
+          "duration_ns": 29640000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.protocol": "AMQP",
+            "messaging.protocol_version": "0.9.1",
+            "messaging.destination": "registration-service.events",
+            "messaging.destination_kind": "topic",
+            "messaging.rabbitmq.queue": "evt-registration-service-user_registered--welcome-service.send_welcome_email",
+            "messaging.rabbitmq.routing_key": "user_registered",
+            "messaging.consumer_group": "welcome-service",
+            "messaging.operation": "process",
+            "messaging.message_id": "msg-9b6c17f4a25e",
+            "nameko.source_service": "registration-service",
+            "nameko.event_type": "user_registered",
+            "nameko.entrypoint": "welcome-service.send_welcome_email"
+          }
+        }
+      ]
+    }
+  ]
+}

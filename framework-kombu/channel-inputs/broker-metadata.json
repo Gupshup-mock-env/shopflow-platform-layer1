@@ -1,0 +1,17 @@
+{
+  "broker": "rabbitmq",
+  "exchanges": [
+    {"name": "shopflow.events", "type": "topic", "durable": true}
+  ],
+  "queues": [
+    {"name": "audit-service.events", "durable": true, "consumers": 1}
+  ],
+  "bindings": [
+    {
+      "source": "shopflow.events",
+      "destination": "audit-service.events",
+      "destination_type": "queue",
+      "routing_key": "event.#"
+    }
+  ]
+}

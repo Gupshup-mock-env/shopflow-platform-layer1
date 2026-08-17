@@ -1,0 +1,189 @@
+{
+  "traces": [
+    {
+      "trace_id": "b207e5ca94f1d368",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "notification-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.notifications",
+          "start_ns": 1730813400000000000,
+          "duration_ns": 3820000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.destination_kind": "exchange",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.message_id": "msg-001"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "email-service",
+          "operation": "amqp.consume",
+          "resource": "email-service.inbox",
+          "start_ns": 1730813400026400000,
+          "duration_ns": 14150000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.source": "email-service.inbox",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.consumer_group": "email-service",
+            "messaging.message_id": "msg-001"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "4fa1cd83e07b6295",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "notification-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.notifications",
+          "start_ns": 1730813402013100000,
+          "duration_ns": 3315000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.destination_kind": "exchange",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.message_id": "msg-002"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "email-service",
+          "operation": "amqp.consume",
+          "resource": "email-service.inbox",
+          "start_ns": 1730813402035700000,
+          "duration_ns": 11640000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.source": "email-service.inbox",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.consumer_group": "email-service",
+            "messaging.message_id": "msg-002"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "9c6b0e27fa14538d",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "notification-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.notifications",
+          "start_ns": 1730813404021800000,
+          "duration_ns": 4470000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.destination_kind": "exchange",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.message_id": "msg-003"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "email-service",
+          "operation": "amqp.consume",
+          "resource": "email-service.inbox",
+          "start_ns": 1730813404064900000,
+          "duration_ns": 16720000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.source": "email-service.inbox",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.consumer_group": "email-service",
+            "messaging.message_id": "msg-003"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "e35847b1c9d0a672",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "notification-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.notifications",
+          "start_ns": 1730813406017500000,
+          "duration_ns": 3690000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.destination_kind": "exchange",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.message_id": "msg-004"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "email-service",
+          "operation": "amqp.consume",
+          "resource": "email-service.inbox",
+          "start_ns": 1730813406037200000,
+          "duration_ns": 12980000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.source": "email-service.inbox",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.consumer_group": "email-service",
+            "messaging.message_id": "msg-004"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "72d9f4a05b8c1e36",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "notification-service",
+          "operation": "amqp.publish",
+          "resource": "shopflow.notifications",
+          "start_ns": 1730813408029600000,
+          "duration_ns": 4105000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.destination_kind": "exchange",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.message_id": "msg-005"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "email-service",
+          "operation": "amqp.consume",
+          "resource": "email-service.inbox",
+          "start_ns": 1730813408078300000,
+          "duration_ns": 15340000,
+          "meta": {
+            "messaging.system": "rabbitmq",
+            "messaging.destination": "shopflow.notifications",
+            "messaging.source": "email-service.inbox",
+            "messaging.rabbitmq.routing_key": "notification.email.order_confirmed",
+            "messaging.consumer_group": "email-service",
+            "messaging.message_id": "msg-005"
+          }
+        }
+      ]
+    }
+  ]
+}

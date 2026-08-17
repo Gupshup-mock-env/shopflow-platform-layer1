@@ -1,0 +1,47 @@
+case_id: "topic-env-no-default"
+layer: 1
+axis: "topic-indirection"
+variant: "env-var-no-default"
+description: "Topic name comes from a required environment variable with no in-repo default, so static analysis alone cannot resolve it."
+
+services:
+  - name: "fraud-service"
+    role: "producer"
+  - name: "review-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.fraud.check_requested"
+    broker: "kafka"
+
+edges:
+  - producer: "fraud-service"
+    topic: "shopflow.fraud.check_requested"
+    consumer: "review-service"
+
+payloads:
+  - producer: "fraud-service"
+    topic: "shopflow.fraud.check_requested"
+    schema_type: "pydantic"
+    schema:
+      model_name: "FraudCheckRequestedEvent"
+      fields:
+        order_id: "str"
+        amount_cents: "int"
+        customer_id: "str"
+        ip_address: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["fraud-service", "shopflow.fraud.check_requested", "review-service"]
+      static: "blind"
+      apm: "full"
+      broker: "full"
+      iac: "full"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: true

@@ -1,0 +1,48 @@
+case_id: "payload-dict-literal"
+layer: 1
+axis: "payload"
+variant: "inline-dict-literal"
+description: "Kafka producer/consumer on a literal topic where the payload is an anonymous dict literal built inline at the produce call site."
+
+services:
+  - name: "analytics-service"
+    role: "producer"
+  - name: "collector-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.analytics.product_viewed"
+    broker: "kafka"
+
+edges:
+  - producer: "analytics-service"
+    topic: "shopflow.analytics.product_viewed"
+    consumer: "collector-service"
+
+payloads:
+  - producer: "analytics-service"
+    topic: "shopflow.analytics.product_viewed"
+    schema_type: "dict-literal"
+    encoding: "json"
+    schema:
+      fields:
+        event: "str"
+        product_id: "str"
+        user_id: "str"
+        timestamp: "str"
+        session_id: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["analytics-service", "shopflow.analytics.product_viewed", "collector-service"]
+      static: "full"
+      apm: "partial"
+      broker: "blind"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false

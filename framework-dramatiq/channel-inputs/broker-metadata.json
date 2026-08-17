@@ -1,0 +1,79 @@
+{
+  "broker": "rabbitmq",
+  "exchanges": [
+    {
+      "name": "",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "vhost": "/"
+    }
+  ],
+  "queues": [
+    {
+      "name": "alerts",
+      "durable": true,
+      "auto_delete": false,
+      "exclusive": false,
+      "consumers": 1,
+      "messages": 0,
+      "vhost": "/",
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "alerts.XQ"
+      }
+    },
+    {
+      "name": "alerts.DQ",
+      "durable": true,
+      "auto_delete": false,
+      "exclusive": false,
+      "consumers": 1,
+      "messages": 0,
+      "vhost": "/",
+      "arguments": {
+        "x-dead-letter-exchange": "",
+        "x-dead-letter-routing-key": "alerts.XQ"
+      }
+    },
+    {
+      "name": "alerts.XQ",
+      "durable": true,
+      "auto_delete": false,
+      "exclusive": false,
+      "consumers": 0,
+      "messages": 0,
+      "vhost": "/",
+      "arguments": {
+        "x-message-ttl": 604800000
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "",
+      "destination": "alerts",
+      "destination_type": "queue",
+      "routing_key": "alerts",
+      "vhost": "/",
+      "arguments": {}
+    },
+    {
+      "source": "",
+      "destination": "alerts.DQ",
+      "destination_type": "queue",
+      "routing_key": "alerts.DQ",
+      "vhost": "/",
+      "arguments": {}
+    },
+    {
+      "source": "",
+      "destination": "alerts.XQ",
+      "destination_type": "queue",
+      "routing_key": "alerts.XQ",
+      "vhost": "/",
+      "arguments": {}
+    }
+  ]
+}

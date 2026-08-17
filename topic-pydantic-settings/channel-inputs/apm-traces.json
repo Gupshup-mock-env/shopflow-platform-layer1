@@ -1,0 +1,194 @@
+{
+  "traces": [
+    {
+      "trace_id": "2ea9410fb7c85d36",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "loyalty-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049960000000000,
+          "duration_ns": 2980000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 1,
+            "messaging.kafka.message_key": "CUST-4471",
+            "messaging.message_id": "pts-30ba7c19e5f4"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "rewards-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049960026000000,
+          "duration_ns": 9600000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 1,
+            "messaging.consumer_group": "rewards-service",
+            "messaging.message_id": "pts-30ba7c19e5f4"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "84f01d75a2c9e6b3",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "loyalty-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049962011000000,
+          "duration_ns": 4730000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 0,
+            "messaging.kafka.message_key": "CUST-1180",
+            "messaging.message_id": "pts-e1479c02b6da"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "rewards-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049962052000000,
+          "duration_ns": 13800000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 0,
+            "messaging.consumer_group": "rewards-service",
+            "messaging.message_id": "pts-e1479c02b6da"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "59b6c803e4d17a2f",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "loyalty-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049964023000000,
+          "duration_ns": 3260000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 2,
+            "messaging.kafka.message_key": "CUST-9032",
+            "messaging.message_id": "pts-a962d3f70b1c"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "rewards-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049964056000000,
+          "duration_ns": 17500000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 2,
+            "messaging.consumer_group": "rewards-service",
+            "messaging.message_id": "pts-a962d3f70b1c"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "c7d258e1094ba63f",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "loyalty-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049966036000000,
+          "duration_ns": 5040000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 1,
+            "messaging.kafka.message_key": "CUST-4471",
+            "messaging.message_id": "pts-5c8e01ad937b"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "rewards-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049966055000000,
+          "duration_ns": 10300000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 1,
+            "messaging.consumer_group": "rewards-service",
+            "messaging.message_id": "pts-5c8e01ad937b"
+          }
+        }
+      ]
+    },
+    {
+      "trace_id": "0b3e7f4a6d182c95",
+      "spans": [
+        {
+          "span_id": "s1",
+          "service": "loyalty-service",
+          "operation": "kafka.produce",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049968048000000,
+          "duration_ns": 3610000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 0,
+            "messaging.kafka.message_key": "CUST-6624",
+            "messaging.message_id": "pts-72f6b48e0dc3"
+          }
+        },
+        {
+          "span_id": "s2",
+          "parent_span_id": "s1",
+          "service": "rewards-service",
+          "operation": "kafka.consume",
+          "resource": "shopflow.loyalty.points_earned",
+          "start_ns": 1763049968095000000,
+          "duration_ns": 12100000,
+          "meta": {
+            "messaging.system": "kafka",
+            "messaging.destination": "shopflow.loyalty.points_earned",
+            "messaging.destination_kind": "topic",
+            "messaging.kafka.partition": 0,
+            "messaging.consumer_group": "rewards-service",
+            "messaging.message_id": "pts-72f6b48e0dc3"
+          }
+        }
+      ]
+    }
+  ]
+}

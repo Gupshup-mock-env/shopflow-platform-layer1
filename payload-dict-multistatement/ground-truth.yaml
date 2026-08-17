@@ -1,0 +1,50 @@
+case_id: "payload-dict-multistatement"
+layer: 1
+axis: "payload"
+variant: "dict-multistatement"
+description: "Kafka event dict assembled across several statements, with the nested attributes block returned by a separate module-level function."
+
+services:
+  - name: "enrichment-service"
+    role: "producer"
+  - name: "store-service"
+    role: "consumer"
+
+topics:
+  - name: "shopflow.catalog.enriched"
+    broker: "kafka"
+
+edges:
+  - producer: "enrichment-service"
+    topic: "shopflow.catalog.enriched"
+    consumer: "store-service"
+
+payloads:
+  - producer: "enrichment-service"
+    topic: "shopflow.catalog.enriched"
+    schema_type: "dict-multi"
+    encoding: "json"
+    schema:
+      fields:
+        type: "str"
+        product_id: "str"
+        attributes:
+          brand: "str"
+          weight_grams: "int"
+          color: "str"
+        enriched_at: "str"
+
+annotations: {}
+
+channel_visibility:
+  edges:
+    - edge: ["enrichment-service", "shopflow.catalog.enriched", "store-service"]
+      static: "partial"
+      apm: "partial"
+      broker: "blind"
+      iac: "blind"
+
+channel_inputs_available:
+  broker_metadata: true
+  apm_traces: true
+  iac: false
