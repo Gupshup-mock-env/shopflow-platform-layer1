@@ -1,38 +1,41 @@
-# ShopFlow — Domain Event Bus
+# ShopFlow — Accounts
 
-Two services that sit either side of the ShopFlow AMQP event bus. Both speak
-AMQP through [Kombu](https://docs.celeryq.dev/projects/kombu/), so the exchange,
-queue and binding are declared as Python objects rather than in broker config.
+Two [Nameko](https://nameko.readthedocs.io/) microservices from the ShopFlow
+accounts domain. Both run under the Nameko service runner and communicate over
+the service event bus rather than by calling each other directly.
 
 | Service | Role | Description |
 |---|---|---|
-| `event-service` | producer | Turns committed transactions into event envelopes and publishes them onto the bus. |
-| `audit-service` | consumer | Binds the whole `event.#` space and writes every envelope to the compliance audit log. |
+| `registration-service` | producer | Owns account activation. Drains the registration outbox and dispatches an event per activated account. |
+| `welcome-service` | consumer | Handles the registration event and sends the onboarding email. |
 
-## Topology
+## Running a service
 
-`bus.py` in each service holds that service's view of the topology. The exchange
-declaration is identical on both sides, which keeps the declaration idempotent
-and lets either service be deployed first.
-
-## Local development
-
-Each service is self-contained. Build and run it from its own directory:
+Each service is self-contained and started by the Nameko runner:
 
 ```bash
-cd event-service
+cd registration-service
 pip install -r requirements.txt
-RABBITMQ_HOST=localhost python -u app.py
+RABBITMQ_HOST=localhost nameko run --config config.yaml registration_service:RegistrationService
+```
+
+```bash
+cd welcome-service
+pip install -r requirements.txt
+RABBITMQ_HOST=localhost nameko run --config config.yaml welcome_service:WelcomeService
 ```
 
 Docker:
 
 ```bash
-docker build -t shopflow-event-service ./event-service
-docker build -t shopflow-audit-service ./audit-service
+docker build -t shopflow-registration-service ./registration-service
+docker build -t shopflow-welcome-service ./welcome-service
 ```
 
 ## Configuration
+
+`config.yaml` is the Nameko configuration file. It interpolates the following
+environment variables into `AMQP_URI`:
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -40,8 +43,8 @@ docker build -t shopflow-audit-service ./audit-service
 | `RABBITMQ_PORT` | `5672` | Broker port |
 | `RABBITMQ_USER` | `guest` | Broker username |
 | `RABBITMQ_PASSWORD` | `guest` | Broker password |
-| `RABBITMQ_VHOST` | `/` | Virtual host |
 | `SERVICE_NAME` | per service | Used in the structured log records |
 | `HEALTH_PORT` | `8080` | `GET /healthz` |
 
-Both services log one JSON object per line to stdout.
+Nameko's own runner logs go to stderr. Each service logs one JSON object per
+line to stdout.
