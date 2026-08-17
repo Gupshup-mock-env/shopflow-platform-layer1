@@ -11,15 +11,15 @@ has already voided one run (`mono-test`).
 
 ```
 <case-id>/
-  codebase/          what the tool is given
-  ground-truth.yaml  the correct answer, hand-written
-  channel-inputs/    APM traces, broker metadata, Terraform (when the case has them)
+  codebase/     what AI Engineer is given — an ordinary-looking app repo
 ```
+
+**Answer keys are not here.** They live in a separate repository so that no case can be
+solved by reading the key next to the code:
+<https://github.com/Gupshup-mock-env/msg_eval_truth>
 
 Layer 1 isolates one variable at a time: the broker (`broker-*`), how the topic name is
 referenced (`topic-*`), the messaging framework (`framework-*`), or the payload shape
 (`payload-*`).
 
-Results: `EVAL-RESULTS.md` in the harness repo.
-
-Results for the whole suite (Layers 1-3): [EVAL-RESULTS.md](https://github.com/Gupshup-mock-env/shopflow-platform-layer2/blob/all-cases/EVAL-RESULTS.md)
+Results: <https://github.com/Gupshup-mock-env/shopflow-platform-layer2/blob/all-cases/EVAL-RESULTS.md>
