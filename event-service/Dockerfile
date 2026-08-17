@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["faust", "-A", "app", "--quiet", "worker", "-l", "info"]
+CMD ["python", "-u", "app.py"]

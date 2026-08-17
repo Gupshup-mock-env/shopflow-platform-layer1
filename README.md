@@ -1,46 +1,47 @@
-# ShopFlow — Clickstream & Storefront Metrics
+# ShopFlow — Domain Event Bus
 
-Two Faust stream-processing services from the ShopFlow analytics domain.
+Two services that sit either side of the ShopFlow AMQP event bus. Both speak
+AMQP through [Kombu](https://docs.celeryq.dev/projects/kombu/), so the exchange,
+queue and binding are declared as Python objects rather than in broker config.
 
 | Service | Role | Description |
 |---|---|---|
-| `clickstream-service` | producer | Collects storefront interactions from the web tier and writes them onto the raw clickstream. |
-| `metrics-service` | consumer | Aggregates the raw clickstream into the counters the merchandising dashboards read. |
+| `event-service` | producer | Turns committed transactions into event envelopes and publishes them onto the bus. |
+| `audit-service` | consumer | Binds the whole `event.#` space and writes every envelope to the compliance audit log. |
 
-Both services are Faust applications, so each one runs as a Faust worker and
-serves its Kubernetes probe from Faust's built-in web server.
+## Topology
+
+`bus.py` in each service holds that service's view of the topology. The exchange
+declaration is identical on both sides, which keeps the declaration idempotent
+and lets either service be deployed first.
 
 ## Local development
 
 Each service is self-contained. Build and run it from its own directory:
 
 ```bash
-cd clickstream-service
+cd event-service
 pip install -r requirements.txt
-KAFKA_BOOTSTRAP=localhost:9092 faust -A app worker -l info
+RABBITMQ_HOST=localhost python -u app.py
 ```
 
 Docker:
 
 ```bash
-docker build -t shopflow-clickstream-service ./clickstream-service
-docker build -t shopflow-metrics-service ./metrics-service
+docker build -t shopflow-event-service ./event-service
+docker build -t shopflow-audit-service ./audit-service
 ```
 
 ## Configuration
 
 | Variable | Default | Notes |
 |---|---|---|
-| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
-| `SERVICE_NAME` | per service | Faust application id, and the consumer group that follows from it |
-| `HEALTH_PORT` | `8080` | Faust web port; serves `GET /healthz` |
+| `RABBITMQ_HOST` | `localhost` | Broker hostname |
+| `RABBITMQ_PORT` | `5672` | Broker port |
+| `RABBITMQ_USER` | `guest` | Broker username |
+| `RABBITMQ_PASSWORD` | `guest` | Broker password |
+| `RABBITMQ_VHOST` | `/` | Virtual host |
+| `SERVICE_NAME` | per service | Used in the structured log records |
+| `HEALTH_PORT` | `8080` | `GET /healthz` |
 
-Faust's own logging is routed to stderr and stdout redirection is disabled, so
-stdout carries one JSON object per line and nothing else.
-
-## Web endpoints
-
-| Path | Service | Purpose |
-|---|---|---|
-| `/healthz` | both | Probe endpoint |
-| `/metrics/actions` | `metrics-service` | Running action counts |
+Both services log one JSON object per line to stdout.
