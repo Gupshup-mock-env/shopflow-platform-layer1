@@ -21,3 +21,5 @@ referenced (`topic-*`), the messaging framework (`framework-*`), or the payload 
 (`payload-*`).
 
 Results: `EVAL-RESULTS.md` in the harness repo.
+
+Results for the whole suite (Layers 1-3): [EVAL-RESULTS.md](https://github.com/Gupshup-mock-env/shopflow-platform-layer2/blob/all-cases/EVAL-RESULTS.md)
