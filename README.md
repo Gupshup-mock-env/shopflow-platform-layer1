@@ -1,42 +1,39 @@
-# shopflow-alerting
+# ShopFlow — Pricing & Discounts
 
-Merchandising alert delivery for ShopFlow.
+Two FastStream services from the ShopFlow merchandising domain.
 
-## Layout
+| Service | Role | Description |
+|---|---|---|
+| `pricing-service` | producer | Owns the effective sell price of every catalogue product. Runs the nightly repricing job and applies merchandiser clearance overrides. |
+| `discount-service` | consumer | Rebuilds the promotional discount ladder for a product whenever its price changes. |
 
+Both services are `AsgiFastStream` applications on a `KafkaBroker`, so the same
+process serves the Kubernetes probe on `/healthz` and runs the broker workers.
+
+## Local development
+
+Each service is self-contained. Build and run it from its own directory:
+
+```bash
+cd pricing-service
+pip install -r requirements.txt
+KAFKA_BOOTSTRAP=localhost:9092 faststream run app:app --port 8080
 ```
-alert-service/    inventory sweep front end that raises alerts
-alert-worker/     Dramatiq worker that delivers them
-```
 
-Both deployables ship the same `alerting/` package (broker wiring plus the
-actor definitions) so that the caller and the executor agree on actor names,
-signatures and queues. The package is vendored into each image because each
-service builds from its own directory; keep the two copies in sync when you
-change an actor signature.
+Docker:
+
+```bash
+docker build -t shopflow-pricing-service ./pricing-service
+docker build -t shopflow-discount-service ./discount-service
+```
 
 ## Configuration
 
-| Variable | Default | Purpose |
+| Variable | Default | Notes |
 |---|---|---|
-| `SERVICE_NAME` | per service | value used in the structured log stream |
-| `RABBITMQ_HOST` | `localhost` | AMQP host |
-| `RABBITMQ_PORT` | `5672` | AMQP port |
-| `RABBITMQ_USER` | `guest` | AMQP user |
-| `RABBITMQ_PASSWORD` | `guest` | AMQP password |
-| `RABBITMQ_VHOST` | `/` | AMQP virtual host |
-| `HEALTH_PORT` | `8080` | port serving `GET /healthz` |
+| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
+| `KAFKA_CONSUMER_GROUP` | `discount-service` | Consumer group, `discount-service` only |
+| `SERVICE_NAME` | per service | Used in the structured log records |
 
-## Running locally
-
-```
-docker run -d --rm -p 5672:5672 rabbitmq:3.13-management
-
-cd alert-worker && pip install -r requirements.txt
-dramatiq alerting.actors --processes 1 --threads 2
-
-cd alert-service && pip install -r requirements.txt
-python -u app.py
-```
-
-Both processes emit one JSON object per line on stdout.
+FastStream's own logger is disabled in both services; each one writes a single
+JSON object per line to stdout instead.
