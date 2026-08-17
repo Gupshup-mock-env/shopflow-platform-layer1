@@ -1,24 +1,18 @@
-# ShopFlow Inventory
+# ShopFlow Analytics
 
-Stock movements recorded at the warehouses, streamed to the services that need
-to react to them.
+Storefront behavioural events and the collector that rolls them up.
 
 | Service | Role |
 | --- | --- |
-| `inventory-service` | Publishes a `StockUpdate` to Kafka for every stock movement. |
-| `warehouse-service` | Consumes the stream and keeps its on-hand counters current. |
-
-## Wire format
-
-`shared/models.py` holds the event definitions used by both sides. Events go on
-the wire as UTF-8 JSON produced by `dataclasses.asdict()`.
+| `analytics-service` | Emits a Kafka event every time a shopper opens a product page. |
+| `collector-service` | Consumes the stream and maintains per-product view counters. |
 
 ## Build
 
-Images build from the repository root so both stages can see `shared/`:
+Each service is self-contained and builds from its own directory:
 
-    docker build -f inventory-service/Dockerfile -t inventory-service:latest .
-    docker build -f warehouse-service/Dockerfile -t warehouse-service:latest .
+    docker build -t analytics-service:latest analytics-service
+    docker build -t collector-service:latest collector-service
 
 ## Configuration
 
@@ -27,6 +21,6 @@ Images build from the repository root so both stages can see `shared/`:
 | `KAFKA_BOOTSTRAP` | `localhost:9092` |
 | `SERVICE_NAME` | the service name |
 | `HEALTH_PORT` | `8080` |
-| `KAFKA_CONSUMER_GROUP` (warehouse-service only) | `warehouse-service` |
+| `KAFKA_CONSUMER_GROUP` (collector-service only) | `collector-service` |
 
 Both services answer `GET /healthz` on `HEALTH_PORT`.

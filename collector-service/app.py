@@ -1,7 +1,7 @@
-"""Applies ShopFlow stock movements to the warehouse on-hand counters.
+"""Aggregates ShopFlow storefront product views.
 
-Reads stock events off Kafka, rebuilds the shared event object from the JSON
-body and commits the offset once the movement has been applied.
+Reads view events off Kafka, folds them into per-product and per-session
+counters and commits the offset once the event has been counted.
 """
 
 from __future__ import annotations
@@ -17,20 +17,19 @@ from typing import Final
 
 from confluent_kafka import Consumer, KafkaError, KafkaException, Message
 
-from shared.models import StockUpdate
-
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "warehouse-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "collector-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
-CONSUMER_GROUP: Final[str] = os.environ.get("KAFKA_CONSUMER_GROUP", "warehouse-service")
+CONSUMER_GROUP: Final[str] = os.environ.get("KAFKA_CONSUMER_GROUP", "collector-service")
 HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
 
-TOPIC: Final[str] = "shopflow.inventory.stock_updated"
+TOPIC: Final[str] = "shopflow.analytics.product_viewed"
 
 POLL_TIMEOUT_SECONDS: Final[float] = 1.0
 BROKER_CONNECT_TIMEOUT_SECONDS: Final[float] = 60.0
 
 _shutdown = threading.Event()
-_on_hand: dict[tuple[str, str], int] = {}
+_views_by_product: dict[str, int] = {}
+_sessions_by_product: dict[str, set[str]] = {}
 
 
 def log(service: str, event: str, **fields: object) -> None:
@@ -104,11 +103,11 @@ def wait_for_broker(
             return
 
 
-def apply_movement(event: StockUpdate) -> int:
-    """Apply the movement to the in-memory counter and return the new level."""
-    location = (event.warehouse_id, event.sku)
-    _on_hand[location] = _on_hand.get(location, 0) + event.quantity_delta
-    return _on_hand[location]
+def count_view(product_id: str, session_id: str) -> tuple[int, int]:
+    """Fold one view into the counters and return (views, unique sessions)."""
+    _views_by_product[product_id] = _views_by_product.get(product_id, 0) + 1
+    _sessions_by_product.setdefault(product_id, set()).add(session_id)
+    return _views_by_product[product_id], len(_sessions_by_product[product_id])
 
 
 def handle(msg: Message) -> None:
@@ -117,8 +116,8 @@ def handle(msg: Message) -> None:
         log(SERVICE_NAME, "empty_message", topic=msg.topic(), offset=msg.offset())
         return
     try:
-        event = StockUpdate(**json.loads(raw.decode("utf-8")))
-    except (UnicodeDecodeError, ValueError, TypeError) as exc:
+        view = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         log(
             SERVICE_NAME,
             "invalid_payload",
@@ -129,16 +128,28 @@ def handle(msg: Message) -> None:
         )
         return
 
-    on_hand = apply_movement(event)
+    if view.get("event") != "product_viewed":
+        log(
+            SERVICE_NAME,
+            "skipped",
+            topic=msg.topic(),
+            offset=msg.offset(),
+            event_type=view.get("event"),
+        )
+        return
+
+    views, unique_sessions = count_view(view["product_id"], view["session_id"])
     log(
         SERVICE_NAME,
         "consumed",
         topic=msg.topic(),
-        message_id=event.sku,
-        warehouse_id=event.warehouse_id,
-        quantity_delta=event.quantity_delta,
-        reason=event.reason,
-        on_hand=on_hand,
+        message_id=view["session_id"],
+        event_type=view["event"],
+        product_id=view["product_id"],
+        user_id=view["user_id"],
+        viewed_at=view["timestamp"],
+        product_views=views,
+        unique_sessions=unique_sessions,
         partition=msg.partition(),
         offset=msg.offset(),
     )
