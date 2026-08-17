@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["faststream", "run", "app:app", "--host", "0.0.0.0", "--port", "8080", "--access-log", "false"]
+CMD ["faust", "-A", "app", "--quiet", "worker", "-l", "info"]

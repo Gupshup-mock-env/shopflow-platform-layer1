@@ -1,30 +1,30 @@
-# ShopFlow — Pricing & Discounts
+# ShopFlow — Clickstream & Storefront Metrics
 
-Two FastStream services from the ShopFlow merchandising domain.
+Two Faust stream-processing services from the ShopFlow analytics domain.
 
 | Service | Role | Description |
 |---|---|---|
-| `pricing-service` | producer | Owns the effective sell price of every catalogue product. Runs the nightly repricing job and applies merchandiser clearance overrides. |
-| `discount-service` | consumer | Rebuilds the promotional discount ladder for a product whenever its price changes. |
+| `clickstream-service` | producer | Collects storefront interactions from the web tier and writes them onto the raw clickstream. |
+| `metrics-service` | consumer | Aggregates the raw clickstream into the counters the merchandising dashboards read. |
 
-Both services are `AsgiFastStream` applications on a `KafkaBroker`, so the same
-process serves the Kubernetes probe on `/healthz` and runs the broker workers.
+Both services are Faust applications, so each one runs as a Faust worker and
+serves its Kubernetes probe from Faust's built-in web server.
 
 ## Local development
 
 Each service is self-contained. Build and run it from its own directory:
 
 ```bash
-cd pricing-service
+cd clickstream-service
 pip install -r requirements.txt
-KAFKA_BOOTSTRAP=localhost:9092 faststream run app:app --port 8080
+KAFKA_BOOTSTRAP=localhost:9092 faust -A app worker -l info
 ```
 
 Docker:
 
 ```bash
-docker build -t shopflow-pricing-service ./pricing-service
-docker build -t shopflow-discount-service ./discount-service
+docker build -t shopflow-clickstream-service ./clickstream-service
+docker build -t shopflow-metrics-service ./metrics-service
 ```
 
 ## Configuration
@@ -32,8 +32,15 @@ docker build -t shopflow-discount-service ./discount-service
 | Variable | Default | Notes |
 |---|---|---|
 | `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
-| `KAFKA_CONSUMER_GROUP` | `discount-service` | Consumer group, `discount-service` only |
-| `SERVICE_NAME` | per service | Used in the structured log records |
+| `SERVICE_NAME` | per service | Faust application id, and the consumer group that follows from it |
+| `HEALTH_PORT` | `8080` | Faust web port; serves `GET /healthz` |
 
-FastStream's own logger is disabled in both services; each one writes a single
-JSON object per line to stdout instead.
+Faust's own logging is routed to stderr and stdout redirection is disabled, so
+stdout carries one JSON object per line and nothing else.
+
+## Web endpoints
+
+| Path | Service | Purpose |
+|---|---|---|
+| `/healthz` | both | Probe endpoint |
+| `/metrics/actions` | `metrics-service` | Running action counts |
