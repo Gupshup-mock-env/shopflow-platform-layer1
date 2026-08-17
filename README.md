@@ -22,4 +22,4 @@ Layer 1 isolates one variable at a time: the broker (`broker-*`), how the topic 
 referenced (`topic-*`), the messaging framework (`framework-*`), or the payload shape
 (`payload-*`).
 
-Results: <https://github.com/Gupshup-mock-env/shopflow-platform-layer2/blob/all-cases/EVAL-RESULTS.md>
+Results are kept locally by the eval harness, not in this repo.
