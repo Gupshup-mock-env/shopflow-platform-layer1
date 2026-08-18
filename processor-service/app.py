@@ -1,14 +1,15 @@
-"""Storefront record service.
+"""Order processing worker.
 
-Consumes enriched catalogue records and keeps the storefront product index up
-to date. The index is an in-process dictionary here; the production
-deployment writes through to the storefront datastore.
+Consumes orders handed over by the legacy fulfilment sync and stages them for
+the modern fulfilment pipeline. The staging ledger is an in-process dictionary
+here; the production deployment writes through to the orders database.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import pickle
 import signal
 import threading
 import time
@@ -19,16 +20,18 @@ from typing import Any
 from confluent_kafka import Consumer, KafkaError, KafkaException, Message
 from confluent_kafka.admin import AdminClient
 
-SERVICE_NAME = os.environ.get("SERVICE_NAME", "store-service")
+from legacy_models import LegacyOrder
+
+SERVICE_NAME = os.environ.get("SERVICE_NAME", "processor-service")
 KAFKA_BOOTSTRAP = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
-KAFKA_CONSUMER_GROUP = os.environ.get("KAFKA_CONSUMER_GROUP", "store-service")
+KAFKA_CONSUMER_GROUP = os.environ.get("KAFKA_CONSUMER_GROUP", "processor-service")
 HEALTH_PORT = int(os.environ.get("HEALTH_PORT", "8080"))
 
 BROKER_WAIT_SECONDS = 60.0
 POLL_TIMEOUT_SECONDS = 1.0
 
 _shutdown = threading.Event()
-_records: dict[str, dict[str, Any]] = {}
+_ledger: dict[str, dict[str, Any]] = {}
 
 
 def log(service: str, event: str, **fields: object) -> None:
@@ -103,13 +106,13 @@ def header_value(msg: Message, key: str) -> str | None:
     return None
 
 
-def upsert_record(product_id: str, attributes: dict[str, Any], enriched_at: str) -> None:
-    _records[product_id] = {
-        "brand": attributes.get("brand", "unknown"),
-        "weight_grams": attributes.get("weight_grams", 0),
-        "color": attributes.get("color", "unspecified"),
-        "enriched_at": enriched_at,
-        "indexed_at": datetime.now(timezone.utc).isoformat(),
+def stage_order(order: LegacyOrder) -> None:
+    _ledger[order.order_id] = {
+        "order_id": order.order_id,
+        "item_count": order.item_count(),
+        "skus": [item["sku"] for item in order.items],
+        "total": order.total,
+        "staged_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -120,8 +123,8 @@ def handle_message(msg: Message) -> None:
         log(SERVICE_NAME, "empty_message", topic=msg.topic(), message_id=message_id)
         return
     try:
-        event = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        order = pickle.loads(raw)
+    except (pickle.UnpicklingError, AttributeError, EOFError, ImportError, IndexError) as exc:
         log(
             SERVICE_NAME,
             "invalid_payload",
@@ -131,29 +134,28 @@ def handle_message(msg: Message) -> None:
         )
         return
 
-    if event.get("type") != "product_enriched":
+    if not isinstance(order, LegacyOrder):
         log(
             SERVICE_NAME,
-            "ignored_event",
+            "unexpected_payload",
             topic=msg.topic(),
             message_id=message_id,
-            event_type=event.get("type"),
+            payload_type=type(order).__name__,
         )
         return
 
-    product_id = event["product_id"]
-    attributes = event.get("attributes") or {}
-    upsert_record(product_id, attributes, event["enriched_at"])
+    stage_order(order)
     log(
         SERVICE_NAME,
         "consumed",
         topic=msg.topic(),
         message_id=message_id,
-        product_id=product_id,
-        brand=attributes.get("brand"),
+        order_id=order.order_id,
+        item_count=order.item_count(),
+        total=order.total,
         partition=msg.partition(),
         offset=msg.offset(),
-        record_count=len(_records),
+        staged=len(_ledger),
     )
 
 
@@ -173,7 +175,7 @@ def main() -> None:
     wait_for_broker(KAFKA_BOOTSTRAP)
 
     consumer = build_consumer()
-    consumer.subscribe(["shopflow.catalog.enriched"])
+    consumer.subscribe(["shopflow.legacy.order_sync"])
 
     try:
         while not _shutdown.is_set():
@@ -190,7 +192,7 @@ def main() -> None:
             consumer.commit(message=msg, asynchronous=False)
     finally:
         consumer.close()
-        log(SERVICE_NAME, "stopping", record_count=len(_records))
+        log(SERVICE_NAME, "stopping", staged=len(_ledger))
 
 
 if __name__ == "__main__":

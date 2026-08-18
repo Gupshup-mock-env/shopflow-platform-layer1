@@ -1,67 +1,33 @@
-"""Catalogue enrichment worker.
+"""Legacy order sync bridge.
 
-Takes raw product records from the merchandising snapshot, derives the
-presentation attributes the storefront needs and publishes the enriched
-record. Runs a short burst on startup and then stays resident so the
-platform health probe keeps passing.
+Drains the nightly order batch out of the legacy fulfilment stack and puts it
+on Kafka for the modern processing pipeline. Runs a short burst on startup and
+then stays resident so the platform health probe keeps passing.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import pickle
 import signal
 import threading
 import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any
 from uuid import uuid4
 
 from confluent_kafka import KafkaException, Message, Producer
 
-SERVICE_NAME = os.environ.get("SERVICE_NAME", "enrichment-service")
+from legacy_models import LegacyOrder
+
+SERVICE_NAME = os.environ.get("SERVICE_NAME", "legacy-service")
 KAFKA_BOOTSTRAP = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
 HEALTH_PORT = int(os.environ.get("HEALTH_PORT", "8080"))
 
 BROKER_WAIT_SECONDS = 60.0
 PUBLISH_INTERVAL_SECONDS = 2.0
 FLUSH_TIMEOUT_SECONDS = 10.0
-
-SNAPSHOT: tuple[dict[str, Any], ...] = (
-    {
-        "id": "PRD-10421",
-        "title": "Aurora Pour-Over Kettle",
-        "brand": "Aurora",
-        "weight_grams": 850,
-        "color": "graphite",
-    },
-    {
-        "id": "PRD-10422",
-        "title": "Trailhead 30L Daypack",
-        "brand": "Trailhead",
-        "weight_grams": 1240,
-        "color": "moss",
-    },
-    {
-        "id": "PRD-10423",
-        "title": "Nimbus Desk Lamp",
-        "brand": "Nimbus",
-        "weight_grams": 640,
-    },
-    {
-        "id": "PRD-10424",
-        "title": "Harbor Wool Throw",
-        "color": "oatmeal",
-    },
-    {
-        "id": "PRD-10425",
-        "title": "Cobalt Cycling Bottle",
-        "brand": "Cobalt",
-        "weight_grams": 210,
-        "color": "cobalt",
-    },
-)
 
 _shutdown = threading.Event()
 
@@ -136,28 +102,54 @@ def _on_delivery(err: object, msg: Message) -> None:
     )
 
 
-def build_attributes(product: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "brand": product.get("brand", "unknown"),
-        "weight_grams": product.get("weight_grams", 0),
-        "color": product.get("color", "unspecified"),
-    }
+def read_batch() -> list[LegacyOrder]:
+    """Read the pending order batch out of the legacy export."""
+    return [
+        LegacyOrder(
+            "LEG-880134",
+            [
+                {"sku": "SKU-CERAMIC-MUG-01", "qty": 2, "unit_price": 12.50},
+                {"sku": "SKU-FILTER-100", "qty": 1, "unit_price": 6.25},
+            ],
+            31.25,
+        ),
+        LegacyOrder(
+            "LEG-880135",
+            [{"sku": "SKU-POUR-OVER-03", "qty": 1, "unit_price": 48.00}],
+            48.00,
+        ),
+        LegacyOrder(
+            "LEG-880136",
+            [
+                {"sku": "SKU-BEANS-ETH-12", "qty": 3, "unit_price": 22.75},
+                {"sku": "SKU-GRINDER-07", "qty": 1, "unit_price": 89.90},
+            ],
+            158.15,
+        ),
+        LegacyOrder(
+            "LEG-880137",
+            [{"sku": "SKU-TRAVEL-TUMBLER-02", "qty": 4, "unit_price": 19.95}],
+            79.80,
+        ),
+        LegacyOrder(
+            "LEG-880138",
+            [
+                {"sku": "SKU-ESPRESSO-CUP-06", "qty": 6, "unit_price": 8.40},
+                {"sku": "SKU-BEANS-COL-09", "qty": 2, "unit_price": 18.60},
+            ],
+            87.60,
+        ),
+    ]
 
 
-def publish_enriched(product: dict[str, Any], producer: Producer) -> str:
+def publish_order(order: LegacyOrder, producer: Producer) -> str:
     message_id = str(uuid4())
-    event: dict[str, Any] = {}
-    event["type"] = "product_enriched"
-    event["product_id"] = product["id"]
-    event["attributes"] = build_attributes(product)
-    event["enriched_at"] = datetime.now(timezone.utc).isoformat()
-
     producer.produce(
-        "shopflow.catalog.enriched",
-        key=product["id"].encode("utf-8"),
-        value=json.dumps(event).encode("utf-8"),
+        "shopflow.legacy.order_sync",
+        key=order.order_id.encode("utf-8"),
+        value=pickle.dumps(order),
         headers=[
-            ("content-type", b"application/json"),
+            ("content-type", b"application/python-pickle"),
             ("message-id", message_id.encode("utf-8")),
         ],
         on_delivery=_on_delivery,
@@ -166,9 +158,9 @@ def publish_enriched(product: dict[str, Any], producer: Producer) -> str:
     log(
         SERVICE_NAME,
         "published",
-        topic="shopflow.catalog.enriched",
+        topic="shopflow.legacy.order_sync",
         message_id=message_id,
-        product_id=event["product_id"],
+        order_id=order.order_id,
     )
     return message_id
 
@@ -196,19 +188,19 @@ def main() -> None:
         "started",
         bootstrap_servers=KAFKA_BOOTSTRAP,
         health_port=HEALTH_PORT,
-        snapshot_size=len(SNAPSHOT),
     )
 
     producer = build_producer()
     wait_for_broker(producer)
 
+    batch = read_batch()
     published = 0
-    for index, product in enumerate(SNAPSHOT):
+    for index, order in enumerate(batch):
         if _shutdown.is_set():
             break
-        publish_enriched(product, producer)
+        publish_order(order, producer)
         published += 1
-        if index < len(SNAPSHOT) - 1:
+        if index < len(batch) - 1:
             _shutdown.wait(PUBLISH_INTERVAL_SECONDS)
 
     producer.flush(FLUSH_TIMEOUT_SECONDS)
