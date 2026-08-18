@@ -1,7 +1,8 @@
-"""Keeps the ShopFlow routing table in step with carrier scan events.
+"""Profile service.
 
-Reads `ShipmentUpdate` records off Kafka, decodes them with the generated
-protobuf module and commits the offset once the update has been applied.
+Materialises the customer profile projection from identity events. The
+projection is held in memory here; the production deployment writes it to
+DynamoDB.
 """
 
 from __future__ import annotations
@@ -13,29 +14,24 @@ import threading
 import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Final
+from typing import Any, Final
 
-from confluent_kafka import Consumer, KafkaError, KafkaException, Message
-from google.protobuf.message import DecodeError
+from confluent_kafka import KafkaError, KafkaException, Message
+from pydantic import ValidationError
 
-import shipment_pb2
+from consumer import UserEventConsumer
+from models import UserRegisteredEvent
 
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "route-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "profile-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
-CONSUMER_GROUP: Final[str] = os.environ.get("KAFKA_CONSUMER_GROUP", "route-service")
+CONSUMER_GROUP: Final[str] = os.environ.get("KAFKA_CONSUMER_GROUP", "profile-service")
 HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
-
-TOPIC: Final[str] = "shopflow.logistics.shipment_updated"
 
 POLL_TIMEOUT_SECONDS: Final[float] = 1.0
 BROKER_CONNECT_TIMEOUT_SECONDS: Final[float] = 60.0
 
-TERMINAL_STATUSES: Final[frozenset[int]] = frozenset(
-    {shipment_pb2.ShipmentUpdate.DELIVERED}
-)
-
 _shutdown = threading.Event()
-_routing_table: dict[str, str] = {}
+_profiles: dict[str, dict[str, Any]] = {}
 
 
 def log(service: str, event: str, **fields: object) -> None:
@@ -73,7 +69,7 @@ def _handle_sigterm(signum: int, frame: object) -> None:
 
 
 def wait_for_broker(
-    consumer: Consumer,
+    consumer: UserEventConsumer,
     timeout: float = BROKER_CONNECT_TIMEOUT_SECONDS,
 ) -> None:
     """Block until the broker answers a metadata request, or give up."""
@@ -109,14 +105,11 @@ def wait_for_broker(
             return
 
 
-def apply_update(update: shipment_pb2.ShipmentUpdate) -> str:
-    """Record the current leg for a shipment and return the resolved route."""
-    if update.status in TERMINAL_STATUSES:
-        _routing_table.pop(update.shipment_id, None)
-        return "closed"
-    route = f"{update.origin}->{update.destination}"
-    _routing_table[update.shipment_id] = route
-    return route
+def header_value(msg: Message, key: str) -> str | None:
+    for name, value in msg.headers() or []:
+        if name == key:
+            return value.decode("utf-8") if isinstance(value, bytes) else str(value)
+    return None
 
 
 def handle(msg: Message) -> None:
@@ -124,35 +117,34 @@ def handle(msg: Message) -> None:
     if raw is None:
         log(SERVICE_NAME, "empty_message", topic=msg.topic(), offset=msg.offset())
         return
-
-    update = shipment_pb2.ShipmentUpdate()
     try:
-        update.ParseFromString(raw)
-    except DecodeError as exc:
+        event = UserRegisteredEvent.model_validate_json(raw)
+    except ValidationError as exc:
         log(
             SERVICE_NAME,
             "invalid_payload",
             topic=msg.topic(),
             partition=msg.partition(),
             offset=msg.offset(),
-            error=str(exc),
+            error=exc.errors(include_url=False),
         )
         return
 
-    route = apply_update(update)
+    _profiles[event.user_id] = {
+        "user_id": event.user_id,
+        "display_name": event.name,
+        "email": event.email,
+        "member_since": event.registered_at,
+    }
     log(
         SERVICE_NAME,
         "consumed",
         topic=msg.topic(),
-        message_id=update.shipment_id,
-        origin=update.origin,
-        destination=update.destination,
-        status=shipment_pb2.ShipmentUpdate.Status.Name(update.status),
-        updated_at=update.updated_at,
-        route=route,
-        open_shipments=len(_routing_table),
+        message_id=header_value(msg, "message-id"),
+        user_id=event.user_id,
         partition=msg.partition(),
         offset=msg.offset(),
+        profiles=len(_profiles),
     )
 
 
@@ -161,28 +153,23 @@ def main() -> None:
     signal.signal(signal.SIGINT, _handle_sigterm)
 
     start_health_server(HEALTH_PORT)
+
+    consumer = UserEventConsumer(
+        bootstrap_servers=KAFKA_BOOTSTRAP,
+        consumer_group=CONSUMER_GROUP,
+        client_id=f"{SERVICE_NAME}-0",
+    )
     log(
         SERVICE_NAME,
         "started",
-        topic=TOPIC,
+        topic=consumer.topic,
         bootstrap_servers=KAFKA_BOOTSTRAP,
         consumer_group=CONSUMER_GROUP,
         health_port=HEALTH_PORT,
     )
-
-    consumer = Consumer(
-        {
-            "bootstrap.servers": KAFKA_BOOTSTRAP,
-            "group.id": CONSUMER_GROUP,
-            "client.id": f"{SERVICE_NAME}-0",
-            "auto.offset.reset": "earliest",
-            "enable.auto.commit": False,
-            "session.timeout.ms": 45000,
-        }
-    )
     wait_for_broker(consumer)
-    consumer.subscribe([TOPIC])
-    log(SERVICE_NAME, "subscribed", topic=TOPIC, consumer_group=CONSUMER_GROUP)
+    consumer.subscribe()
+    log(SERVICE_NAME, "subscribed", topic=consumer.topic, consumer_group=CONSUMER_GROUP)
 
     consumed = 0
     try:
@@ -194,13 +181,19 @@ def main() -> None:
             if error is not None:
                 if error.code() == KafkaError._PARTITION_EOF:
                     continue
-                log(SERVICE_NAME, "consume_error", topic=TOPIC, error=str(error))
+                log(SERVICE_NAME, "consume_error", topic=msg.topic(), error=str(error))
                 continue
             handle(msg)
-            consumer.commit(message=msg, asynchronous=False)
+            consumer.commit(msg)
             consumed += 1
     finally:
-        log(SERVICE_NAME, "stopping", topic=TOPIC, consumed=consumed)
+        log(
+            SERVICE_NAME,
+            "stopping",
+            topic=consumer.topic,
+            consumed=consumed,
+            profiles=len(_profiles),
+        )
         consumer.close()
 
 

@@ -1,33 +1,34 @@
-# ShopFlow Logistics
+# ShopFlow — Identity
 
-Two services that keep the ShopFlow store network in step with carrier movements.
+| Service | Role | Description |
+|---|---|---|
+| `user-service` | producer | Owns registration and account records. Announces new accounts. |
+| `profile-service` | consumer | Builds the customer profile projection from account events. |
 
-| Service | Role |
-| --- | --- |
-| `logistics-service` | Publishes a `ShipmentUpdate` to Kafka every time a carrier scans a parcel. |
-| `route-service` | Consumes the stream and keeps the routing table for each shipment current. |
+Each service wraps its Kafka client in a small class (`UserEventPublisher` /
+`UserEventConsumer`) so that the transport can be swapped without touching the
+handlers.
 
-## Wire format
+## Local development
 
-`proto/shipment.proto` is the source of truth for what goes on the wire. Both
-images generate `shipment_pb2.py` from it during the build; the generated module
-is not committed.
+```bash
+cd user-service
+pip install -r requirements.txt
+KAFKA_BOOTSTRAP=localhost:9092 python -u app.py
+```
 
-## Build
+Docker:
 
-Images build from the repository root so the code-generation stage can see
-`proto/`:
-
-    docker build -f logistics-service/Dockerfile -t logistics-service:latest .
-    docker build -f route-service/Dockerfile -t route-service:latest .
+```bash
+docker build -t shopflow-user-service ./user-service
+docker build -t shopflow-profile-service ./profile-service
+```
 
 ## Configuration
 
-| Variable | Default |
-| --- | --- |
-| `KAFKA_BOOTSTRAP` | `localhost:9092` |
-| `SERVICE_NAME` | the service name |
-| `HEALTH_PORT` | `8080` |
-| `KAFKA_CONSUMER_GROUP` (route-service only) | `route-service` |
-
-Both services answer `GET /healthz` on `HEALTH_PORT`.
+| Variable | Default | Notes |
+|---|---|---|
+| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
+| `KAFKA_CONSUMER_GROUP` | `profile-service` | Consumer group, profile-service only |
+| `SERVICE_NAME` | per service | Used in the structured log records |
+| `HEALTH_PORT` | `8080` | `GET /healthz` |

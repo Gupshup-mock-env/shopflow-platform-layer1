@@ -1,9 +1,0 @@
-syntax = "proto3";
-message ShipmentUpdate {
-  string shipment_id = 1;
-  string origin = 2;
-  string destination = 3;
-  enum Status { PENDING = 0; IN_TRANSIT = 1; DELIVERED = 2; }
-  Status status = 4;
-  int64 updated_at = 5;
-}

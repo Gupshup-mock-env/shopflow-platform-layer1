@@ -1,5 +1,0 @@
-__pycache__/
-*.py[cod]
-*_pb2.py
-*_pb2.pyi
-.venv/
