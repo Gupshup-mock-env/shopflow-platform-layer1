@@ -1,35 +1,22 @@
-# ShopFlow — Cart & Pricing
+# ShopFlow Loyalty Platform
 
-Monorepo holding the two services that sit on either side of the shopping-cart
-event stream, plus the `shared/` package they both depend on.
-
-```
-shared/            topic names and event models used by both services
-cart-service/      producer - owns cart state
-pricing-service/   consumer - recalculates promotions and shipping thresholds
-```
-
-`shared/` is not published to an index. Each image copies it in at build time
-and puts it on `PYTHONPATH`, so **all Docker builds use the repository root as
-their build context**:
-
-```bash
-docker build -f cart-service/Dockerfile     -t shopflow-cart-service     .
-docker build -f pricing-service/Dockerfile  -t shopflow-pricing-service  .
-```
-
-For a local run, do the same from the repository root:
-
-```bash
-pip install -r cart-service/requirements.txt
-PYTHONPATH=. KAFKA_BOOTSTRAP=localhost:9092 python -u cart-service/app.py
-```
+| Service | Role | Description |
+| --- | --- | --- |
+| `loyalty-service` | producer | Awards loyalty points when an order completes and announces the award. |
+| `rewards-service` | consumer | Keeps each customer's redeemable balance up to date. |
 
 ## Configuration
 
-| Variable | Default | Notes |
-|---|---|---|
-| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
-| `KAFKA_CONSUMER_GROUP` | `pricing-service` | Consumer group, pricing-service only |
-| `SERVICE_NAME` | per service | Used in the structured log records |
-| `HEALTH_PORT` | `8080` | `GET /healthz` |
+Each service owns a `Settings` model built on `pydantic-settings`. Every field has a
+default that is correct for the platform, and any field can be overridden by an
+environment variable of the same name (case-insensitive), for example `KAFKA_BOOTSTRAP`
+or `SERVICE_NAME`.
+
+## Running locally
+
+```bash
+cd loyalty-service && pip install -r requirements.txt && python -u app.py
+cd rewards-service && pip install -r requirements.txt && python -u app.py
+```
+
+Both services expose `GET /healthz` on port 8080.
