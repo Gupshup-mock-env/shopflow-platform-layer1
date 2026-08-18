@@ -1,7 +1,8 @@
-"""ShopFlow analytics collector.
+"""ShopFlow fraud screening service.
 
-Fans client-side interactions out to one Kafka stream per region and event
-type, then stays resident so the platform health probe keeps passing.
+Publishes a fraud check request for every order that trips a scoring rule.
+Runtime wiring (broker address, destination topic) is supplied by the platform
+through the environment; the service refuses to start without it.
 """
 
 from __future__ import annotations
@@ -11,55 +12,32 @@ import os
 import signal
 import threading
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Final
 from uuid import uuid4
 
 from confluent_kafka import KafkaException, Message, Producer
 
-from models import AnalyticsEvent
-from topics import current_region, topic_for
+from models import FraudCheckRequestedEvent
 
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "analytics-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "fraud-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
 HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
 
-REGION: Final[str] = current_region()
+TOPIC: Final[str] = os.environ["FRAUD_CHECK_TOPIC"]
 
 EVENT_COUNT: Final[int] = 5
 EVENT_INTERVAL_SECONDS: Final[float] = 2.0
 BROKER_CONNECT_TIMEOUT_SECONDS: Final[float] = 60.0
 FLUSH_TIMEOUT_SECONDS: Final[float] = 10.0
 
-SESSION_ID: Final[str] = "sess-9f4c21ab"
-
-INTERACTIONS: Final[tuple[tuple[str, str, dict], ...]] = (
-    (
-        "page_view",
-        "USR-40218",
-        {"path": "/p/ceramic-mug", "referrer": "google", "device": "desktop"},
-    ),
-    (
-        "click",
-        "USR-40218",
-        {"element": "add-to-cart", "sku": "SKU-CERAMIC-MUG-01", "position": 1},
-    ),
-    (
-        "purchase",
-        "USR-40218",
-        {"order_id": "ORD-51902", "total_cents": 2500, "currency": "USD"},
-    ),
-    (
-        "page_view",
-        "USR-40218",
-        {"path": "/orders/ORD-51902", "referrer": "internal", "device": "desktop"},
-    ),
-    (
-        "click",
-        "USR-40218",
-        {"element": "recommendation-tile", "sku": "SKU-BEANS-ETH-12", "position": 3},
-    ),
+FLAGGED_ORDERS: Final[tuple[tuple[str, int, str, str], ...]] = (
+    ("ORD-88301", 24999, "CUST-3391", "203.0.113.14"),
+    ("ORD-88302", 189900, "CUST-1174", "198.51.100.77"),
+    ("ORD-88303", 4599, "CUST-8820", "203.0.113.201"),
+    ("ORD-88304", 76250, "CUST-5063", "192.0.2.145"),
+    ("ORD-88305", 312000, "CUST-2208", "198.51.100.9"),
 )
 
 _shutdown = threading.Event()
@@ -136,20 +114,18 @@ def wait_for_broker(
             return
 
 
-def build_sample_events(count: int = EVENT_COUNT) -> list[AnalyticsEvent]:
-    occurred_at = datetime.now(timezone.utc)
-    events: list[AnalyticsEvent] = []
+def build_sample_events(count: int = EVENT_COUNT) -> list[FraudCheckRequestedEvent]:
+    events: list[FraudCheckRequestedEvent] = []
     for index in range(count):
-        event_type, user_id, properties = INTERACTIONS[index % len(INTERACTIONS)]
+        order_id, amount_cents, customer_id, ip_address = FLAGGED_ORDERS[
+            index % len(FLAGGED_ORDERS)
+        ]
         events.append(
-            AnalyticsEvent(
-                event_type=event_type,
-                user_id=user_id,
-                session_id=SESSION_ID,
-                timestamp=(
-                    occurred_at + timedelta(seconds=index * EVENT_INTERVAL_SECONDS)
-                ).isoformat(),
-                properties=properties,
+            FraudCheckRequestedEvent(
+                order_id=order_id,
+                amount_cents=amount_cents,
+                customer_id=customer_id,
+                ip_address=ip_address,
             )
         )
     return events
@@ -157,7 +133,7 @@ def build_sample_events(count: int = EVENT_COUNT) -> list[AnalyticsEvent]:
 
 def _on_delivery(err: object, msg: Message) -> None:
     if err is not None:
-        log(SERVICE_NAME, "delivery_failed", error=str(err))
+        log(SERVICE_NAME, "delivery_failed", topic=TOPIC, error=str(err))
         return
     log(
         SERVICE_NAME,
@@ -168,17 +144,15 @@ def _on_delivery(err: object, msg: Message) -> None:
     )
 
 
-def publish(producer: Producer, event: AnalyticsEvent) -> None:
-    topic = topic_for(REGION, event.event_type)
+def publish(producer: Producer, event: FraudCheckRequestedEvent) -> None:
     message_id = str(uuid4())
     producer.produce(
-        topic=topic,
-        key=event.session_id.encode("utf-8"),
+        topic=TOPIC,
+        key=event.order_id.encode("utf-8"),
         value=event.model_dump_json().encode("utf-8"),
         headers=[
             ("content-type", b"application/json"),
-            ("event-type", event.event_type.encode("utf-8")),
-            ("region", REGION.encode("utf-8")),
+            ("event-type", b"fraud.check_requested"),
             ("message-id", message_id.encode("utf-8")),
         ],
         on_delivery=_on_delivery,
@@ -187,11 +161,10 @@ def publish(producer: Producer, event: AnalyticsEvent) -> None:
     log(
         SERVICE_NAME,
         "published",
-        topic=topic,
+        topic=TOPIC,
         message_id=message_id,
-        event_type=event.event_type,
-        user_id=event.user_id,
-        session_id=event.session_id,
+        order_id=event.order_id,
+        amount_cents=event.amount_cents,
     )
 
 
@@ -203,7 +176,7 @@ def main() -> None:
     log(
         SERVICE_NAME,
         "started",
-        region=REGION,
+        topic=TOPIC,
         bootstrap_servers=KAFKA_BOOTSTRAP,
         health_port=HEALTH_PORT,
     )
@@ -230,11 +203,11 @@ def main() -> None:
             _shutdown.wait(EVENT_INTERVAL_SECONDS)
 
     producer.flush(FLUSH_TIMEOUT_SECONDS)
-    log(SERVICE_NAME, "batch_complete", region=REGION, published=published)
+    log(SERVICE_NAME, "batch_complete", topic=TOPIC, published=published)
 
     _shutdown.wait()
 
-    log(SERVICE_NAME, "stopping", region=REGION, published=published)
+    log(SERVICE_NAME, "stopping", topic=TOPIC, published=published)
     producer.flush(FLUSH_TIMEOUT_SECONDS)
 
 
