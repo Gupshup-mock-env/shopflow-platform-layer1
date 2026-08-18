@@ -1,36 +1,25 @@
-# ShopFlow — Catalogue & Search
+# ShopFlow eval cases — Layer 1 (reference branch)
 
-Two services from the ShopFlow product domain.
+Every Layer 1 eval case, all present at once, so each can be linked to by a stable
+GitHub URL.
 
-| Service | Role | Description |
-|---|---|---|
-| `catalog-service` | producer | Owns the product catalogue. Emits an event whenever a merchandiser edits a product. |
-| `search-service`  | consumer | Maintains the storefront search index from catalogue events. |
+**This branch is a reference archive. It is never scanned.** The context-graph builder
+scans `main`, which holds one case at a time at the repository root. Scanning this
+branch would ingest 23 cases together — several share service names like
+`order-service`, so the resulting graph would merge unrelated services. That mistake
+has already voided one run (`mono-test`).
 
-## Local development
-
-Each service is self-contained. Build and run it from its own directory:
-
-```bash
-cd catalog-service
-pip install -r requirements.txt
-KAFKA_BOOTSTRAP=localhost:9092 python -u app.py
+```
+<case-id>/
+  codebase/     what AI Engineer is given — an ordinary-looking app repo
 ```
 
-Docker:
+**Answer keys are not here.** They live in a separate repository so that no case can be
+solved by reading the key next to the code:
+<https://github.com/Gupshup-mock-env/msg_eval_truth>
 
-```bash
-docker build -t shopflow-catalog-service ./catalog-service
-docker build -t shopflow-search-service ./search-service
-```
+Layer 1 isolates one variable at a time: the broker (`broker-*`), how the topic name is
+referenced (`topic-*`), the messaging framework (`framework-*`), or the payload shape
+(`payload-*`).
 
-## Configuration
-
-| Variable | Default | Notes |
-|---|---|---|
-| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
-| `KAFKA_CONSUMER_GROUP` | `search-service` | Consumer group, search-service only |
-| `SERVICE_NAME` | per service | Used in the structured log records |
-| `HEALTH_PORT` | `8080` | `GET /healthz` |
-
-Both services log one JSON object per line to stdout.
+Results are kept locally by the eval harness, not in this repo.
