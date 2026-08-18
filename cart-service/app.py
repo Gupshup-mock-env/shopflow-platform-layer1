@@ -1,8 +1,8 @@
-"""ShopFlow manual review service.
+"""Cart service.
 
-Consumes fraud check requests and queues them for an analyst. Runtime wiring
-(broker address, source topic) is supplied by the platform through the
-environment; the service refuses to start without it.
+Owns shopping-cart state and emits a ``CartUpdatedEvent`` every time a cart is
+mutated. On startup it drains the write-behind buffer that survived the last
+restart, then stays resident so the platform health probe keeps passing.
 """
 
 from __future__ import annotations
@@ -14,23 +14,29 @@ import threading
 import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Final
+from typing import Any, Final
+from uuid import uuid4
 
-from confluent_kafka import Consumer, KafkaError, KafkaException, Message
-from pydantic import ValidationError
+from confluent_kafka import KafkaException, Message, Producer
 
-from models import FraudCheckRequestedEvent
+from shared.constants import CART_EVENTS_TOPIC
+from shared.events import CartUpdatedEvent
 
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "review-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "cart-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
-CONSUMER_GROUP: Final[str] = os.environ.get("KAFKA_CONSUMER_GROUP", "review-service")
 HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
 
-TOPIC: Final[str] = os.environ["FRAUD_CHECK_TOPIC"]
-
-POLL_TIMEOUT_SECONDS: Final[float] = 1.0
+EVENT_INTERVAL_SECONDS: Final[float] = 2.0
 BROKER_CONNECT_TIMEOUT_SECONDS: Final[float] = 60.0
-MANUAL_REVIEW_THRESHOLD_CENTS: Final[int] = 100000
+FLUSH_TIMEOUT_SECONDS: Final[float] = 10.0
+
+BUFFERED_MUTATIONS: Final[tuple[dict[str, Any], ...]] = (
+    {"cart_id": "CART-9F2A11", "customer_id": "CUST-40218", "item_count": 3, "total_cents": 10894},
+    {"cart_id": "CART-7B0C48", "customer_id": "CUST-51733", "item_count": 1, "total_cents": 2450},
+    {"cart_id": "CART-24DD90", "customer_id": "guest-8e11c4", "item_count": 5, "total_cents": 23115},
+    {"cart_id": "CART-9F2A11", "customer_id": "CUST-40218", "item_count": 4, "total_cents": 14893},
+    {"cart_id": "CART-C31E07", "customer_id": "CUST-60904", "item_count": 2, "total_cents": 7194},
+)
 
 _shutdown = threading.Event()
 
@@ -70,7 +76,7 @@ def _handle_sigterm(signum: int, frame: object) -> None:
 
 
 def wait_for_broker(
-    consumer: Consumer,
+    producer: Producer,
     timeout: float = BROKER_CONNECT_TIMEOUT_SECONDS,
 ) -> None:
     """Block until the broker answers a metadata request, or give up."""
@@ -80,7 +86,7 @@ def wait_for_broker(
     while not _shutdown.is_set():
         attempt += 1
         try:
-            consumer.list_topics(timeout=5.0)
+            producer.list_topics(timeout=5.0)
         except KafkaException as exc:
             if time.monotonic() >= deadline:
                 raise TimeoutError(
@@ -106,46 +112,40 @@ def wait_for_broker(
             return
 
 
-def header(msg: Message, name: str) -> str | None:
-    for key, value in msg.headers() or []:
-        if key == name:
-            return value.decode("utf-8") if isinstance(value, bytes) else str(value)
-    return None
-
-
-def handle(msg: Message) -> None:
-    raw = msg.value()
-    if raw is None:
-        log(SERVICE_NAME, "empty_message", topic=msg.topic(), offset=msg.offset())
-        return
-    try:
-        event = FraudCheckRequestedEvent.model_validate_json(raw)
-    except ValidationError as exc:
-        log(
-            SERVICE_NAME,
-            "invalid_payload",
-            topic=msg.topic(),
-            partition=msg.partition(),
-            offset=msg.offset(),
-            error=exc.errors(include_url=False),
-        )
+def _on_delivery(err: object, msg: Message) -> None:
+    if err is not None:
+        log(SERVICE_NAME, "delivery_failed", topic=msg.topic(), error=str(err))
         return
     log(
         SERVICE_NAME,
-        "consumed",
+        "delivered",
         topic=msg.topic(),
-        message_id=header(msg, "message-id"),
-        order_id=event.order_id,
-        customer_id=event.customer_id,
-        amount_cents=event.amount_cents,
-        ip_address=event.ip_address,
-        queue=(
-            "analyst-review"
-            if event.amount_cents >= MANUAL_REVIEW_THRESHOLD_CENTS
-            else "auto-screen"
-        ),
         partition=msg.partition(),
         offset=msg.offset(),
+    )
+
+
+def publish(producer: Producer, event: CartUpdatedEvent) -> None:
+    message_id = str(uuid4())
+    producer.produce(
+        topic=CART_EVENTS_TOPIC,
+        key=event.cart_id.encode("utf-8"),
+        value=event.model_dump_json().encode("utf-8"),
+        headers=[
+            ("content-type", b"application/json"),
+            ("event-type", b"cart.updated"),
+            ("message-id", message_id.encode("utf-8")),
+        ],
+        on_delivery=_on_delivery,
+    )
+    producer.poll(0)
+    log(
+        SERVICE_NAME,
+        "published",
+        topic=CART_EVENTS_TOPIC,
+        message_id=message_id,
+        cart_id=event.cart_id,
+        customer_id=event.customer_id,
     )
 
 
@@ -157,44 +157,39 @@ def main() -> None:
     log(
         SERVICE_NAME,
         "started",
-        topic=TOPIC,
+        topic=CART_EVENTS_TOPIC,
         bootstrap_servers=KAFKA_BOOTSTRAP,
-        consumer_group=CONSUMER_GROUP,
         health_port=HEALTH_PORT,
     )
 
-    consumer = Consumer(
+    producer = Producer(
         {
             "bootstrap.servers": KAFKA_BOOTSTRAP,
-            "group.id": CONSUMER_GROUP,
             "client.id": f"{SERVICE_NAME}-0",
-            "auto.offset.reset": "earliest",
-            "enable.auto.commit": False,
-            "session.timeout.ms": 45000,
+            "acks": "all",
+            "enable.idempotence": True,
+            "linger.ms": 50,
+            "retries": 5,
         }
     )
-    wait_for_broker(consumer)
-    consumer.subscribe([TOPIC])
-    log(SERVICE_NAME, "subscribed", topic=TOPIC, consumer_group=CONSUMER_GROUP)
+    wait_for_broker(producer)
 
-    consumed = 0
-    try:
-        while not _shutdown.is_set():
-            msg = consumer.poll(POLL_TIMEOUT_SECONDS)
-            if msg is None:
-                continue
-            error = msg.error()
-            if error is not None:
-                if error.code() == KafkaError._PARTITION_EOF:
-                    continue
-                log(SERVICE_NAME, "consume_error", topic=TOPIC, error=str(error))
-                continue
-            handle(msg)
-            consumer.commit(message=msg, asynchronous=False)
-            consumed += 1
-    finally:
-        log(SERVICE_NAME, "stopping", topic=TOPIC, consumed=consumed)
-        consumer.close()
+    published = 0
+    for index, mutation in enumerate(BUFFERED_MUTATIONS):
+        if _shutdown.is_set():
+            break
+        publish(producer, CartUpdatedEvent(**mutation))
+        published += 1
+        if index < len(BUFFERED_MUTATIONS) - 1:
+            _shutdown.wait(EVENT_INTERVAL_SECONDS)
+
+    producer.flush(FLUSH_TIMEOUT_SECONDS)
+    log(SERVICE_NAME, "batch_complete", topic=CART_EVENTS_TOPIC, published=published)
+
+    _shutdown.wait()
+
+    log(SERVICE_NAME, "stopping", topic=CART_EVENTS_TOPIC, published=published)
+    producer.flush(FLUSH_TIMEOUT_SECONDS)
 
 
 if __name__ == "__main__":
