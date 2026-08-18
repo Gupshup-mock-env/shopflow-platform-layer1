@@ -1,7 +1,7 @@
-"""Refund reservation worker.
+"""ShopFlow analytics aggregator.
 
-Reads authorised returns from Kafka, reserves the refund amount and commits
-the offset once the record has been handled.
+Rolls up every per-event-type stream for this region into session counters and
+commits the offset once a record has been folded in.
 """
 
 from __future__ import annotations
@@ -11,31 +11,34 @@ import os
 import signal
 import threading
 import time
+from collections import Counter
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Final
 
 from confluent_kafka import Consumer, KafkaError, KafkaException, Message
-from dotenv import find_dotenv, load_dotenv
 from pydantic import ValidationError
 
-from models import ReturnInitiatedEvent
+from models import AnalyticsEvent
+from topics import TRACKED_EVENT_TYPES, current_region, topic_for
 
-ENV_FILE: Final[str] = find_dotenv(usecwd=True)
-load_dotenv(ENV_FILE, override=False)
-
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "refund-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "aggregator-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
+CONSUMER_GROUP: Final[str] = os.environ.get(
+    "KAFKA_CONSUMER_GROUP", "aggregator-service"
+)
 HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
 
-TOPIC: Final[str] = os.environ["RETURNS_TOPIC"]
-CONSUMER_GROUP: Final[str] = os.environ.get("RETURNS_CONSUMER_GROUP", "refund-service")
+REGION: Final[str] = current_region()
+TOPICS: Final[list[str]] = [
+    topic_for(REGION, event_type) for event_type in TRACKED_EVENT_TYPES
+]
 
-POLL_TIMEOUT_SECONDS: Final[float] = float(os.environ.get("POLL_TIMEOUT_SECONDS", "1.0"))
+POLL_TIMEOUT_SECONDS: Final[float] = 1.0
 BROKER_CONNECT_TIMEOUT_SECONDS: Final[float] = 60.0
-REFUND_PER_ITEM_CENTS: Final[int] = 1250
 
 _shutdown = threading.Event()
+_totals: Counter[str] = Counter()
 
 
 def log(service: str, event: str, **fields: object) -> None:
@@ -109,11 +112,11 @@ def wait_for_broker(
             return
 
 
-def message_id_of(msg: Message) -> str:
+def header(msg: Message, name: str) -> str | None:
     for key, value in msg.headers() or []:
-        if key == "message-id" and value is not None:
-            return value.decode("utf-8")
-    return f"{msg.topic()}-{msg.partition()}-{msg.offset()}"
+        if key == name:
+            return value.decode("utf-8") if isinstance(value, bytes) else str(value)
+    return None
 
 
 def handle(msg: Message) -> None:
@@ -122,7 +125,7 @@ def handle(msg: Message) -> None:
         log(SERVICE_NAME, "empty_message", topic=msg.topic(), offset=msg.offset())
         return
     try:
-        event = ReturnInitiatedEvent.model_validate_json(raw)
+        event = AnalyticsEvent.model_validate_json(raw)
     except ValidationError as exc:
         log(
             SERVICE_NAME,
@@ -133,16 +136,17 @@ def handle(msg: Message) -> None:
             error=exc.errors(include_url=False),
         )
         return
+    _totals[event.event_type] += 1
     log(
         SERVICE_NAME,
         "consumed",
         topic=msg.topic(),
-        message_id=message_id_of(msg),
-        return_id=event.return_id,
-        order_id=event.order_id,
-        reason=event.reason,
-        item_count=len(event.items),
-        refund_reserved_cents=len(event.items) * REFUND_PER_ITEM_CENTS,
+        message_id=header(msg, "message-id"),
+        event_type=event.event_type,
+        user_id=event.user_id,
+        session_id=event.session_id,
+        property_count=len(event.properties),
+        running_total=_totals[event.event_type],
         partition=msg.partition(),
         offset=msg.offset(),
     )
@@ -156,10 +160,10 @@ def main() -> None:
     log(
         SERVICE_NAME,
         "started",
-        topic=TOPIC,
+        region=REGION,
+        topics=TOPICS,
         bootstrap_servers=KAFKA_BOOTSTRAP,
         consumer_group=CONSUMER_GROUP,
-        env_file=ENV_FILE,
         health_port=HEALTH_PORT,
     )
 
@@ -174,8 +178,8 @@ def main() -> None:
         }
     )
     wait_for_broker(consumer)
-    consumer.subscribe([TOPIC])
-    log(SERVICE_NAME, "subscribed", topic=TOPIC, consumer_group=CONSUMER_GROUP)
+    consumer.subscribe(TOPICS)
+    log(SERVICE_NAME, "subscribed", topics=TOPICS, consumer_group=CONSUMER_GROUP)
 
     consumed = 0
     try:
@@ -187,13 +191,19 @@ def main() -> None:
             if error is not None:
                 if error.code() == KafkaError._PARTITION_EOF:
                     continue
-                log(SERVICE_NAME, "consume_error", topic=TOPIC, error=str(error))
+                log(SERVICE_NAME, "consume_error", topics=TOPICS, error=str(error))
                 continue
             handle(msg)
             consumer.commit(message=msg, asynchronous=False)
             consumed += 1
     finally:
-        log(SERVICE_NAME, "stopping", topic=TOPIC, consumed=consumed)
+        log(
+            SERVICE_NAME,
+            "stopping",
+            topics=TOPICS,
+            consumed=consumed,
+            totals=dict(_totals),
+        )
         consumer.close()
 
 

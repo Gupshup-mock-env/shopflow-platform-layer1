@@ -1,7 +1,7 @@
-"""Returns authorisation publisher.
+"""ShopFlow analytics collector.
 
-Opens a short burst of sample return authorisations on startup and then stays
-resident so the platform health probe keeps passing.
+Fans client-side interactions out to one Kafka stream per region and event
+type, then stays resident so the platform health probe keeps passing.
 """
 
 from __future__ import annotations
@@ -11,35 +11,55 @@ import os
 import signal
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Final
 from uuid import uuid4
 
 from confluent_kafka import KafkaException, Message, Producer
-from dotenv import find_dotenv, load_dotenv
 
-from models import ReturnInitiatedEvent
+from models import AnalyticsEvent
+from topics import current_region, topic_for
 
-ENV_FILE: Final[str] = find_dotenv(usecwd=True)
-load_dotenv(ENV_FILE, override=False)
-
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "returns-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "analytics-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
 HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
 
-TOPIC: Final[str] = os.environ["RETURNS_TOPIC"]
+REGION: Final[str] = current_region()
 
-EVENT_INTERVAL_SECONDS: Final[float] = float(os.environ.get("PUBLISH_INTERVAL_SECONDS", "2"))
+EVENT_COUNT: Final[int] = 5
+EVENT_INTERVAL_SECONDS: Final[float] = 2.0
 BROKER_CONNECT_TIMEOUT_SECONDS: Final[float] = 60.0
 FLUSH_TIMEOUT_SECONDS: Final[float] = 10.0
 
-AUTHORISATIONS: Final[tuple[tuple[str, str, str, tuple[str, ...]], ...]] = (
-    ("RET-100341", "ORD-889201", "wrong_size", ("SKU-JACKET-M", "SKU-BELT-L")),
-    ("RET-100342", "ORD-889244", "damaged_on_arrival", ("SKU-POUR-OVER-03",)),
-    ("RET-100343", "ORD-889310", "changed_mind", ("SKU-CERAMIC-MUG-01", "SKU-FILTER-100")),
-    ("RET-100344", "ORD-889377", "not_as_described", ("SKU-LAMP-BRASS",)),
-    ("RET-100345", "ORD-889402", "late_delivery", ("SKU-BEANS-ETH-12", "SKU-GRINDER-07")),
+SESSION_ID: Final[str] = "sess-9f4c21ab"
+
+INTERACTIONS: Final[tuple[tuple[str, str, dict], ...]] = (
+    (
+        "page_view",
+        "USR-40218",
+        {"path": "/p/ceramic-mug", "referrer": "google", "device": "desktop"},
+    ),
+    (
+        "click",
+        "USR-40218",
+        {"element": "add-to-cart", "sku": "SKU-CERAMIC-MUG-01", "position": 1},
+    ),
+    (
+        "purchase",
+        "USR-40218",
+        {"order_id": "ORD-51902", "total_cents": 2500, "currency": "USD"},
+    ),
+    (
+        "page_view",
+        "USR-40218",
+        {"path": "/orders/ORD-51902", "referrer": "internal", "device": "desktop"},
+    ),
+    (
+        "click",
+        "USR-40218",
+        {"element": "recommendation-tile", "sku": "SKU-BEANS-ETH-12", "position": 3},
+    ),
 )
 
 _shutdown = threading.Event()
@@ -116,21 +136,28 @@ def wait_for_broker(
             return
 
 
-def build_sample_events() -> list[ReturnInitiatedEvent]:
-    return [
-        ReturnInitiatedEvent(
-            return_id=return_id,
-            order_id=order_id,
-            reason=reason,
-            items=list(items),
+def build_sample_events(count: int = EVENT_COUNT) -> list[AnalyticsEvent]:
+    occurred_at = datetime.now(timezone.utc)
+    events: list[AnalyticsEvent] = []
+    for index in range(count):
+        event_type, user_id, properties = INTERACTIONS[index % len(INTERACTIONS)]
+        events.append(
+            AnalyticsEvent(
+                event_type=event_type,
+                user_id=user_id,
+                session_id=SESSION_ID,
+                timestamp=(
+                    occurred_at + timedelta(seconds=index * EVENT_INTERVAL_SECONDS)
+                ).isoformat(),
+                properties=properties,
+            )
         )
-        for return_id, order_id, reason, items in AUTHORISATIONS
-    ]
+    return events
 
 
 def _on_delivery(err: object, msg: Message) -> None:
     if err is not None:
-        log(SERVICE_NAME, "delivery_failed", topic=TOPIC, error=str(err))
+        log(SERVICE_NAME, "delivery_failed", error=str(err))
         return
     log(
         SERVICE_NAME,
@@ -141,15 +168,17 @@ def _on_delivery(err: object, msg: Message) -> None:
     )
 
 
-def publish(producer: Producer, event: ReturnInitiatedEvent) -> None:
-    message_id = f"ret-{uuid4().hex[:12]}"
+def publish(producer: Producer, event: AnalyticsEvent) -> None:
+    topic = topic_for(REGION, event.event_type)
+    message_id = str(uuid4())
     producer.produce(
-        topic=TOPIC,
-        key=event.return_id.encode("utf-8"),
+        topic=topic,
+        key=event.session_id.encode("utf-8"),
         value=event.model_dump_json().encode("utf-8"),
         headers=[
             ("content-type", b"application/json"),
-            ("event-type", b"returns.initiated"),
+            ("event-type", event.event_type.encode("utf-8")),
+            ("region", REGION.encode("utf-8")),
             ("message-id", message_id.encode("utf-8")),
         ],
         on_delivery=_on_delivery,
@@ -158,11 +187,11 @@ def publish(producer: Producer, event: ReturnInitiatedEvent) -> None:
     log(
         SERVICE_NAME,
         "published",
-        topic=TOPIC,
+        topic=topic,
         message_id=message_id,
-        return_id=event.return_id,
-        order_id=event.order_id,
-        item_count=len(event.items),
+        event_type=event.event_type,
+        user_id=event.user_id,
+        session_id=event.session_id,
     )
 
 
@@ -174,9 +203,8 @@ def main() -> None:
     log(
         SERVICE_NAME,
         "started",
-        topic=TOPIC,
+        region=REGION,
         bootstrap_servers=KAFKA_BOOTSTRAP,
-        env_file=ENV_FILE,
         health_port=HEALTH_PORT,
     )
 
@@ -192,22 +220,21 @@ def main() -> None:
     )
     wait_for_broker(producer)
 
-    events = build_sample_events()
     published = 0
-    for index, event in enumerate(events):
+    for index, event in enumerate(build_sample_events()):
         if _shutdown.is_set():
             break
         publish(producer, event)
         published += 1
-        if index < len(events) - 1:
+        if index < EVENT_COUNT - 1:
             _shutdown.wait(EVENT_INTERVAL_SECONDS)
 
     producer.flush(FLUSH_TIMEOUT_SECONDS)
-    log(SERVICE_NAME, "batch_complete", topic=TOPIC, published=published)
+    log(SERVICE_NAME, "batch_complete", region=REGION, published=published)
 
     _shutdown.wait()
 
-    log(SERVICE_NAME, "stopping", topic=TOPIC, published=published)
+    log(SERVICE_NAME, "stopping", region=REGION, published=published)
     producer.flush(FLUSH_TIMEOUT_SECONDS)
 
 

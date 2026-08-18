@@ -1,30 +1,53 @@
-# ShopFlow Returns Platform
+# ShopFlow — Analytics
+
+Two services from the ShopFlow analytics domain.
 
 | Service | Role | Description |
-| --- | --- | --- |
-| `returns-service` | producer | Opens a return authorisation and announces it to the rest of the platform. |
-| `refund-service` | consumer | Reserves the refund amount for each authorised return. |
+|---|---|---|
+| `analytics-service`  | producer | Collects client-side interactions and fans them out onto the regional streams. |
+| `aggregator-service` | consumer | Folds every regional stream back into per-session counters for the warehouse. |
+
+## Stream naming
+
+Each region owns its own set of per-event-type streams, so a regional outage
+cannot back traffic up for the rest of the fleet. `topics.py` (identical in both
+services) is the only place that knows the naming scheme:
+
+```python
+def topic_for(region: str, event_type: str) -> str:
+    return f"shopflow.analytics.{region}.{event_type}"
+```
+
+`TRACKED_EVENT_TYPES` lists the event types the pipeline carries. The producer
+composes the destination per event; the aggregator subscribes to the full set
+for its region. Adding an event type means adding it to that tuple and
+redeploying both services — nothing else references the stream names.
+
+## Local development
+
+Each service is self-contained. Build and run it from its own directory:
+
+```bash
+cd analytics-service
+pip install -r requirements.txt
+python -u app.py
+```
+
+Docker:
+
+```bash
+docker build -t shopflow-analytics-service ./analytics-service
+docker build -t shopflow-aggregator-service ./aggregator-service
+```
 
 ## Configuration
 
-Both services call `python-dotenv` at startup. `load_dotenv` walks up from the working
-directory, finds the `.env` at the repository root, and fills in anything the process
-environment does not already define, so real deployments can override any key.
+| Variable | Default | Notes |
+|---|---|---|
+| `REGION` | `us-east-1` | Region this replica is pinned to. Both services must agree. |
+| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
+| `KAFKA_CONSUMER_GROUP` | `aggregator-service` | Consumer group, `aggregator-service` only |
+| `SERVICE_NAME` | per service | Used in the structured log records |
+| `HEALTH_PORT` | `8080` | `GET /healthz` |
 
-Keys used:
-
-| Key | Meaning |
-| --- | --- |
-| `KAFKA_BOOTSTRAP` | Kafka bootstrap servers |
-| `RETURNS_TOPIC` | Topic carrying return authorisations |
-| `RETURNS_CONSUMER_GROUP` | Consumer group used by `refund-service` |
-| `PUBLISH_INTERVAL_SECONDS` | Gap between sample publishes on startup |
-| `POLL_TIMEOUT_SECONDS` | Consumer poll timeout |
-| `HEALTH_PORT` | Port serving `GET /healthz` |
-
-## Running locally
-
-```bash
-cd returns-service && pip install -r requirements.txt && python -u app.py
-cd refund-service && pip install -r requirements.txt && python -u app.py
-```
+Both services log one JSON object per line to stdout.
