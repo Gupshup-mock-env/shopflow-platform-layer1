@@ -1,41 +1,33 @@
-# ShopFlow — Legacy Order Sync
+# ShopFlow Logistics
 
-Two services that carry orders from the legacy fulfilment stack into the modern
-pipeline.
+Two services that keep the ShopFlow store network in step with carrier movements.
 
-| Service | Role | Description |
-|---|---|---|
-| `legacy-service` | producer | Drains the pending order batch out of the legacy export and puts it on the bus. |
-| `processor-service` | consumer | Stages incoming orders for the modern fulfilment pipeline. |
+| Service | Role |
+| --- | --- |
+| `logistics-service` | Publishes a `ShipmentUpdate` to Kafka every time a carrier scans a parcel. |
+| `route-service` | Consumes the stream and keeps the routing table for each shipment current. |
 
-`legacy_models.py` is mirrored in both service directories on purpose: the sync
-payloads are pickled, so both sides must resolve the same dotted module path.
-Edit the two copies together (SHOP-2984).
+## Wire format
 
-## Local development
+`proto/shipment.proto` is the source of truth for what goes on the wire. Both
+images generate `shipment_pb2.py` from it during the build; the generated module
+is not committed.
 
-Each service is self-contained. Build and run it from its own directory:
+## Build
 
-```bash
-cd legacy-service
-pip install -r requirements.txt
-KAFKA_BOOTSTRAP=localhost:9092 python -u app.py
-```
+Images build from the repository root so the code-generation stage can see
+`proto/`:
 
-Docker:
-
-```bash
-docker build -t shopflow-legacy-service ./legacy-service
-docker build -t shopflow-processor-service ./processor-service
-```
+    docker build -f logistics-service/Dockerfile -t logistics-service:latest .
+    docker build -f route-service/Dockerfile -t route-service:latest .
 
 ## Configuration
 
-| Variable | Default | Notes |
-|---|---|---|
-| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
-| `KAFKA_CONSUMER_GROUP` | `processor-service` | Consumer group, `processor-service` only |
-| `SERVICE_NAME` | per service | Used in the structured log records |
-| `HEALTH_PORT` | `8080` | `GET /healthz` |
+| Variable | Default |
+| --- | --- |
+| `KAFKA_BOOTSTRAP` | `localhost:9092` |
+| `SERVICE_NAME` | the service name |
+| `HEALTH_PORT` | `8080` |
+| `KAFKA_CONSUMER_GROUP` (route-service only) | `route-service` |
 
-Both services log one JSON object per line to stdout.
+Both services answer `GET /healthz` on `HEALTH_PORT`.
