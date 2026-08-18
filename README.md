@@ -1,26 +1,36 @@
-# ShopFlow Analytics
+# ShopFlow — Catalogue Enrichment
 
-Storefront behavioural events and the collector that rolls them up.
+Two services from the ShopFlow catalogue domain.
 
-| Service | Role |
-| --- | --- |
-| `analytics-service` | Emits a Kafka event every time a shopper opens a product page. |
-| `collector-service` | Consumes the stream and maintains per-product view counters. |
+| Service | Role | Description |
+|---|---|---|
+| `enrichment-service` | producer | Derives presentation attributes for merchandising products and emits the enriched record. |
+| `store-service` | consumer | Keeps the storefront product index in sync with enriched records. |
 
-## Build
+## Local development
 
-Each service is self-contained and builds from its own directory:
+Each service is self-contained. Build and run it from its own directory:
 
-    docker build -t analytics-service:latest analytics-service
-    docker build -t collector-service:latest collector-service
+```bash
+cd enrichment-service
+pip install -r requirements.txt
+KAFKA_BOOTSTRAP=localhost:9092 python -u app.py
+```
+
+Docker:
+
+```bash
+docker build -t shopflow-enrichment-service ./enrichment-service
+docker build -t shopflow-store-service ./store-service
+```
 
 ## Configuration
 
-| Variable | Default |
-| --- | --- |
-| `KAFKA_BOOTSTRAP` | `localhost:9092` |
-| `SERVICE_NAME` | the service name |
-| `HEALTH_PORT` | `8080` |
-| `KAFKA_CONSUMER_GROUP` (collector-service only) | `collector-service` |
+| Variable | Default | Notes |
+|---|---|---|
+| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
+| `KAFKA_CONSUMER_GROUP` | `store-service` | Consumer group, `store-service` only |
+| `SERVICE_NAME` | per service | Used in the structured log records |
+| `HEALTH_PORT` | `8080` | `GET /healthz` |
 
-Both services answer `GET /healthz` on `HEALTH_PORT`.
+Both services log one JSON object per line to stdout.
