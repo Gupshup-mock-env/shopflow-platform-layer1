@@ -1,22 +1,36 @@
-# ShopFlow Loyalty Platform
+# ShopFlow — Catalogue & Search
+
+Two services from the ShopFlow product domain.
 
 | Service | Role | Description |
-| --- | --- | --- |
-| `loyalty-service` | producer | Awards loyalty points when an order completes and announces the award. |
-| `rewards-service` | consumer | Keeps each customer's redeemable balance up to date. |
+|---|---|---|
+| `catalog-service` | producer | Owns the product catalogue. Emits an event whenever a merchandiser edits a product. |
+| `search-service`  | consumer | Maintains the storefront search index from catalogue events. |
+
+## Local development
+
+Each service is self-contained. Build and run it from its own directory:
+
+```bash
+cd catalog-service
+pip install -r requirements.txt
+KAFKA_BOOTSTRAP=localhost:9092 python -u app.py
+```
+
+Docker:
+
+```bash
+docker build -t shopflow-catalog-service ./catalog-service
+docker build -t shopflow-search-service ./search-service
+```
 
 ## Configuration
 
-Each service owns a `Settings` model built on `pydantic-settings`. Every field has a
-default that is correct for the platform, and any field can be overridden by an
-environment variable of the same name (case-insensitive), for example `KAFKA_BOOTSTRAP`
-or `SERVICE_NAME`.
+| Variable | Default | Notes |
+|---|---|---|
+| `KAFKA_BOOTSTRAP` | `localhost:9092` | Kafka bootstrap servers |
+| `KAFKA_CONSUMER_GROUP` | `search-service` | Consumer group, search-service only |
+| `SERVICE_NAME` | per service | Used in the structured log records |
+| `HEALTH_PORT` | `8080` | `GET /healthz` |
 
-## Running locally
-
-```bash
-cd loyalty-service && pip install -r requirements.txt && python -u app.py
-cd rewards-service && pip install -r requirements.txt && python -u app.py
-```
-
-Both services expose `GET /healthz` on port 8080.
+Both services log one JSON object per line to stdout.
