@@ -1,8 +1,7 @@
-"""Profile service.
+"""Warehouse stock projector.
 
-Materialises the customer profile projection from identity events. The
-projection is held in memory here; the production deployment writes it to
-DynamoDB.
+Applies inventory stock movements to the per-warehouse on-hand counts and
+commits the offset once each record has been handled.
 """
 
 from __future__ import annotations
@@ -12,26 +11,29 @@ import os
 import signal
 import threading
 import time
+from collections import defaultdict
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, Final
+from typing import Final
 
-from confluent_kafka import KafkaError, KafkaException, Message
+from confluent_kafka import Consumer, KafkaError, KafkaException, Message
 from pydantic import ValidationError
 
-from consumer import UserEventConsumer
-from models import UserRegisteredEvent
+from config import AppConfig, ConsumerConfig, load_config
+from models import StockUpdatedEvent
 
-SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "profile-service")
+SERVICE_NAME: Final[str] = os.environ.get("SERVICE_NAME", "warehouse-service")
 KAFKA_BOOTSTRAP: Final[str] = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
-CONSUMER_GROUP: Final[str] = os.environ.get("KAFKA_CONSUMER_GROUP", "profile-service")
-HEALTH_PORT: Final[int] = int(os.environ.get("HEALTH_PORT", "8080"))
 
-POLL_TIMEOUT_SECONDS: Final[float] = 1.0
+CONFIG: Final[AppConfig] = load_config()
+TOPIC: Final[str] = CONFIG.topic("stock_updated")
+CONSUMER: Final[ConsumerConfig] = CONFIG.consumer("warehouse-service")
+HEALTH_PORT: Final[int] = CONFIG.health_port
+
 BROKER_CONNECT_TIMEOUT_SECONDS: Final[float] = 60.0
 
 _shutdown = threading.Event()
-_profiles: dict[str, dict[str, Any]] = {}
+_on_hand: dict[tuple[str, str], int] = defaultdict(int)
 
 
 def log(service: str, event: str, **fields: object) -> None:
@@ -69,7 +71,7 @@ def _handle_sigterm(signum: int, frame: object) -> None:
 
 
 def wait_for_broker(
-    consumer: UserEventConsumer,
+    consumer: Consumer,
     timeout: float = BROKER_CONNECT_TIMEOUT_SECONDS,
 ) -> None:
     """Block until the broker answers a metadata request, or give up."""
@@ -105,11 +107,11 @@ def wait_for_broker(
             return
 
 
-def header_value(msg: Message, key: str) -> str | None:
-    for name, value in msg.headers() or []:
-        if name == key:
-            return value.decode("utf-8") if isinstance(value, bytes) else str(value)
-    return None
+def message_id_of(msg: Message) -> str:
+    for key, value in msg.headers() or []:
+        if key == "message-id" and value is not None:
+            return value.decode("utf-8")
+    return f"{msg.topic()}-{msg.partition()}-{msg.offset()}"
 
 
 def handle(msg: Message) -> None:
@@ -118,7 +120,7 @@ def handle(msg: Message) -> None:
         log(SERVICE_NAME, "empty_message", topic=msg.topic(), offset=msg.offset())
         return
     try:
-        event = UserRegisteredEvent.model_validate_json(raw)
+        event = StockUpdatedEvent.model_validate_json(raw)
     except ValidationError as exc:
         log(
             SERVICE_NAME,
@@ -130,21 +132,20 @@ def handle(msg: Message) -> None:
         )
         return
 
-    _profiles[event.user_id] = {
-        "user_id": event.user_id,
-        "display_name": event.name,
-        "email": event.email,
-        "member_since": event.registered_at,
-    }
+    position = (event.warehouse_id, event.sku)
+    _on_hand[position] += event.quantity_delta
     log(
         SERVICE_NAME,
         "consumed",
         topic=msg.topic(),
-        message_id=header_value(msg, "message-id"),
-        user_id=event.user_id,
+        message_id=message_id_of(msg),
+        sku=event.sku,
+        warehouse_id=event.warehouse_id,
+        quantity_delta=event.quantity_delta,
+        reason=event.reason,
+        on_hand=_on_hand[position],
         partition=msg.partition(),
         offset=msg.offset(),
-        profiles=len(_profiles),
     )
 
 
@@ -153,47 +154,47 @@ def main() -> None:
     signal.signal(signal.SIGINT, _handle_sigterm)
 
     start_health_server(HEALTH_PORT)
-
-    consumer = UserEventConsumer(
-        bootstrap_servers=KAFKA_BOOTSTRAP,
-        consumer_group=CONSUMER_GROUP,
-        client_id=f"{SERVICE_NAME}-0",
-    )
     log(
         SERVICE_NAME,
         "started",
-        topic=consumer.topic,
+        topic=TOPIC,
         bootstrap_servers=KAFKA_BOOTSTRAP,
-        consumer_group=CONSUMER_GROUP,
+        consumer_group=CONSUMER.group_id,
+        config_path=str(CONFIG.path),
         health_port=HEALTH_PORT,
     )
+
+    consumer = Consumer(
+        {
+            "bootstrap.servers": KAFKA_BOOTSTRAP,
+            "group.id": CONSUMER.group_id,
+            "client.id": f"{SERVICE_NAME}-0",
+            "auto.offset.reset": CONSUMER.auto_offset_reset,
+            "enable.auto.commit": False,
+            "session.timeout.ms": 45000,
+        }
+    )
     wait_for_broker(consumer)
-    consumer.subscribe()
-    log(SERVICE_NAME, "subscribed", topic=consumer.topic, consumer_group=CONSUMER_GROUP)
+    consumer.subscribe([TOPIC])
+    log(SERVICE_NAME, "subscribed", topic=TOPIC, consumer_group=CONSUMER.group_id)
 
     consumed = 0
     try:
         while not _shutdown.is_set():
-            msg = consumer.poll(POLL_TIMEOUT_SECONDS)
+            msg = consumer.poll(CONSUMER.poll_timeout_seconds)
             if msg is None:
                 continue
             error = msg.error()
             if error is not None:
                 if error.code() == KafkaError._PARTITION_EOF:
                     continue
-                log(SERVICE_NAME, "consume_error", topic=msg.topic(), error=str(error))
+                log(SERVICE_NAME, "consume_error", topic=TOPIC, error=str(error))
                 continue
             handle(msg)
-            consumer.commit(msg)
+            consumer.commit(message=msg, asynchronous=False)
             consumed += 1
     finally:
-        log(
-            SERVICE_NAME,
-            "stopping",
-            topic=consumer.topic,
-            consumed=consumed,
-            profiles=len(_profiles),
-        )
+        log(SERVICE_NAME, "stopping", topic=TOPIC, consumed=consumed)
         consumer.close()
 
 
