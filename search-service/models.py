@@ -1,21 +1,14 @@
-"""Response models for the search REST API."""
+"""Event payloads consumed from the catalogue stream."""
 
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
 
-class SearchHit(BaseModel):
-    """A single product matched by a query."""
+class ProductUpdatedEvent(BaseModel):
+    """A merchandiser-visible change to a catalogue product."""
 
-    product_id: str
-    name: str
-    category: str
-    price_cents: int = Field(..., ge=0)
-
-
-class SearchResponse(BaseModel):
-    """A search query and its matches."""
-
-    query: str
-    hits: list[SearchHit]
+    product_id: str = Field(..., description="Stable catalogue identifier, e.g. SKU-10431")
+    name: str = Field(..., description="Storefront display name")
+    price_cents: int = Field(..., ge=0, description="List price in minor units (USD cents)")
+    category: str = Field(..., description="Slash-delimited category path")
