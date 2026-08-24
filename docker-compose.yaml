@@ -1,48 +1,44 @@
 services:
-  kafka:
-    image: bitnami/kafka:3.7
+  api-gateway:
+    build: ./api-gateway
     environment:
-      KAFKA_CFG_NODE_ID: "0"
-      KAFKA_CFG_PROCESS_ROLES: "controller,broker"
-      KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
-      KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "0@kafka:9093"
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      SERVICE_NAME: api-gateway
+      CATALOG_URL: http://catalog-service:8080
+      SEARCH_URL: http://search-service:8080
+      ORDER_URL: http://order-service:8080
+      INVENTORY_URL: http://inventory-service:8080
     ports:
-      - "9092:9092"
+      - "8080:8080"
+    depends_on:
+      - catalog-service
+      - search-service
+      - order-service
+      - inventory-service
 
   catalog-service:
     build: ./catalog-service
     environment:
       SERVICE_NAME: catalog-service
-      KAFKA_BOOTSTRAP: kafka:9092
-    depends_on:
-      - kafka
-
-  search-service:
-    build: ./search-service
-    environment:
-      SERVICE_NAME: search-service
-      KAFKA_BOOTSTRAP: kafka:9092
-      KAFKA_CONSUMER_GROUP: search-service
-    depends_on:
-      - kafka
-
-  order-service:
-    build: ./order-service
-    environment:
-      SERVICE_NAME: order-service
-      KAFKA_BOOTSTRAP: kafka:9092
-    depends_on:
-      - kafka
 
   inventory-service:
     build: ./inventory-service
     environment:
       SERVICE_NAME: inventory-service
-      KAFKA_BOOTSTRAP: kafka:9092
-      KAFKA_CONSUMER_GROUP: inventory-service
+
+  order-service:
+    build: ./order-service
+    environment:
+      SERVICE_NAME: order-service
+      CATALOG_URL: http://catalog-service:8080
+      INVENTORY_URL: http://inventory-service:8080
     depends_on:
-      - kafka
+      - catalog-service
+      - inventory-service
+
+  search-service:
+    build: ./search-service
+    environment:
+      SERVICE_NAME: search-service
+      CATALOG_URL: http://catalog-service:8080
+    depends_on:
+      - catalog-service
